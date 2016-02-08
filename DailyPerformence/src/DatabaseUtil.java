@@ -7,12 +7,23 @@ import java.net.URL;
 import java.sql.*;
 import java.util.Properties;
 
-
+/**
+ * 
+ * For Database Connection...
+ * 
+ * @author Rabbia
+ *
+ */
 
 public final class DatabaseUtil {
     public Connection conn;
     public static DatabaseUtil db;
     
+    
+    /**
+     * loads properties files from resources folder and initiate Database Connection.
+     * 
+     */
     
     private DatabaseUtil() {
     	
