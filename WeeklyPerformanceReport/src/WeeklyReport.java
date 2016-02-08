@@ -38,8 +38,6 @@ public class WeeklyReport {
 		workingdirectory = workingdirectory+"\\Documents";
 		String tomcatDirectory = "C:\\Program Files\\Apache Software Foundation\\Tomcat 7.0\\webapps\\Openmrs";
 		
-		// Runs at every sunday evening
-		
 		File directory = new File(workingdirectory+"\\WeeklyReports");  // Reports created at
 		if (!directory.exists()) {
 			if (directory.mkdir()) {
@@ -300,6 +298,14 @@ public class WeeklyReport {
 	}
 
 	
+	/**
+	 * 
+	 * Zips the Source Folder Contents.
+	 * 
+	 * @param srcFolder
+	 * @param destZipFile
+	 * @throws Exception
+	 */
 	static public void zipFolder(String srcFolder, String destZipFile) throws Exception {
 	    ZipOutputStream zip = null;
 	    FileOutputStream fileWriter = null;
@@ -311,7 +317,40 @@ public class WeeklyReport {
 	    zip.flush();
 	    zip.close();
 	  }
+	
+	
+	 /**
+	   * 
+	   * Creates Zip file with src Folder Content
+	   * 
+	   * @param path
+	   * @param srcFolder
+	   * @param zip
+	   * @throws Exception
+	   */
+	  static private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip)
+	      throws Exception {
+	    File folder = new File(srcFolder);
 
+	    for (String fileName : folder.list()) {
+	      if (path.equals("")) {
+	        addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
+	      } else {
+	        addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
+	      }
+	    }
+	  }	
+
+	  
+	  /**
+	   * 
+	   * Adds file to Zip Folder
+	   * 
+	   * @param path
+	   * @param srcFile
+	   * @param zip
+	   * @throws Exception
+	   */
 	  static private void addFileToZip(String path, String srcFile, ZipOutputStream zip)
 	      throws Exception {
 
@@ -329,21 +368,14 @@ public class WeeklyReport {
 	    }
 	  }
 
-	  static private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip)
-	      throws Exception {
-	    File folder = new File(srcFolder);
-
-	    for (String fileName : folder.list()) {
-	      if (path.equals("")) {
-	        addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
-	      } else {
-	        addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
-	      }
-	    }
-	  }	
-	  
-	  
-	  
+	 
+	  /**
+	   * 
+	   * Deletes the given file
+	   * 
+	   * @param file
+	   * @throws IOException
+	   */
 	  public static void delete(File file)
 		    	throws IOException{
 		  
