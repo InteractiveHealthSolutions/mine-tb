@@ -501,6 +501,7 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 	{
 		formDateButton.setText (DateFormat.format ("dd-MMM-yyyy", formDate));
 		
+		// check for invalid date
 		if(formDate.getTime().after(new Date())){
 			
 			if (toast != null)
@@ -513,7 +514,8 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 		else
 			formDateButton.setTextColor(getResources().getColor(R.color.IRDTitle));
 		
-			
+		// Update Questions...
+		
 		if(yesConsent.isChecked()){
 		
 			if(noClientReffered.isChecked()){
@@ -642,6 +644,12 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 		return valid;
 	}
 	
+	/**
+	 * 
+	 * Fetch and Display Patient Details from Server
+	 * 
+	 * @return
+	 */
 	public boolean searchPatient ()
 	{
 		final String patient = App.get(patientId);
@@ -667,6 +675,8 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 							});
 							//TODO: Uncomment when live
 							String[][] result = serverService.getPatientReport (patient,GET_PATIENT_ID);
+							
+							// overwrite..
 							firstNameValue = "";
 							lastNameValue = "";
 							phone1Value = "";
@@ -691,6 +701,8 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 						@Override
 						protected void onPostExecute (String result)
 						{
+							
+							// fill in the auto-populate fields.
 							firstName.setText(firstNameValue);
 							surname.setText(lastNameValue);
 							
@@ -954,11 +966,11 @@ public class HIVTestingActivity extends AbstractFragmentActivity
 			
 			if(noConsent.isChecked()){
 				visibility = View.INVISIBLE;
-				hivTestingConsentSkipFlag = true;
+				hivTestingConsentSkipFlag = true;  // set Skip flag as true
 			}
 			else{
 				visibility = View.VISIBLE;
-				hivTestingConsentSkipFlag = false;
+				hivTestingConsentSkipFlag = false;  // set Skip flag as false
 			}
 			
 			for(View vi : v){

@@ -279,8 +279,9 @@ public abstract class AbstractFragmentActivity extends FragmentActivity
 	 */
 	protected void gotoPage (int pageNo)
 	{
+		// Check for flags from different activities/forms and goto page number accordingly
 		
-		if(screeningSkipFlag){
+		if(screeningSkipFlag){                
 			if(pageNo == 9){
 				pageNo = 12;
 			}else

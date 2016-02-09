@@ -66,7 +66,6 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 	ImageButton						facilitySearchButton;
 	TextView						locationIdTextView;
 	
-	//CheckBox						offline; 
 	View[]							views;
 	Animation						alphaAnimation;
 	
@@ -102,7 +101,6 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 		
 		alphaAnimation = AnimationUtils.loadAnimation (this, R.anim.alpha_animation);
 		
-		
 		// Disable fetch button if offline
 		if (App.isOfflineMode ())
 		{
@@ -111,6 +109,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			facilitySearchButton.setEnabled(false);
 		}
 		
+		// Set Listeners
 		facilitySpinner.setOnItemSelectedListener(this);
 		districtSpinner.setOnItemSelectedListener(this);
 		screeningStrategySpinner.setOnItemSelectedListener(this);
@@ -119,6 +118,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 		districtSearchButton.setOnClickListener (this);
 		facilitySearchButton.setOnClickListener (this);
 		screeningStrategySearchButton.setOnClickListener (this);
+		
 		views = new View[] {communityRadioButton, facilityRadioButton};
 		super.onCreate (savedInstanceState);
 		initView (views);
@@ -135,6 +135,8 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			{	App.setScreeningType("Facility");
 			    App.setLocation("");
 			    locationIdTextView.setText(App.getLocation());
+			    
+			    // Save choices in preferences...
 			    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 			    SharedPreferences.Editor editor = preferences.edit ();
 			    editor.putString(Preferences.SCREENING_TYPE, App.getScreeningType());
@@ -223,6 +225,8 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			
 			App.setLocation("");
 			locationIdTextView.setText(App.getLocation());
+			
+			// Save choices in Preferences...
 			SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 			SharedPreferences.Editor editor = preferences.edit ();
 			editor.putString(Preferences.SCREENING_TYPE, App.getScreeningType());
@@ -232,7 +236,6 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 		}
 		
 		initView(views);
-		
 	}
 
 	@Override
@@ -273,24 +276,12 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 	@Override
 	public void initView(View[] views) {
 	
-		/*String[] screeningStrategiesList = serverService.getScreeningStrategiesFromLocal ();
-		ArrayAdapter screeningStrategiesAdapter = new ArrayAdapter(this,android.R.layout.simple_spinner_item, screeningStrategiesList);
-		screeningStrategySpinner.setAdapter (screeningStrategiesAdapter);
-		
-		String screeningStrategy = App.getScreeningStrategy();
-		if(screeningStrategy != "")
-		{
-			ArrayAdapter screeningStrategyAdap = (ArrayAdapter) screeningStrategySpinner.getAdapter(); //cast to an ArrayAdapter
-			int spinnerPosition = screeningStrategyAdap.getPosition(screeningStrategy);
-			//set the default according to value
-			screeningStrategySpinner.setSelection(spinnerPosition);
-		}*/
-		
 		districtTextView.setEnabled(true);
 		if (!App.isOfflineMode ())
 			districtSearchButton.setEnabled(true);
 		districtSpinner.setEnabled(true);
 		
+		// Set Initial State according to preferences...
 		String screeningType = App.getScreeningType();
 		if(screeningType.equals("Facility"))
 		{
@@ -341,48 +332,24 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			facilitySpinner.setEnabled(false);
 		}
 		
-		/*String[] districtList = serverService.getDistricts ();
-		ArrayAdapter districtAdapter = new ArrayAdapter(this,android.R.layout.simple_spinner_item, districtList);
-		districtSpinner.setAdapter (districtAdapter);
-		
-		String district = App.getDistrict();
-		if(district != "")
-		{
-			ArrayAdapter districtAdap = (ArrayAdapter) districtSpinner.getAdapter(); //cast to an ArrayAdapter
-			int spinnerPosition = districtAdap.getPosition(district);
-			//set the default according to value
-			districtSpinner.setSelection(spinnerPosition);
-		}*/
-		
 		setSpinnerItemState();
 		
 	}
 
+	/**
+	 * Fill and Set Spinner according to the selections and preferences...
+	 * 
+	 */
 	private void setSpinnerItemState(){
-	
-		/*String selectedValue = districtSpinner.getSelectedItem().toString();					
-		String prefix = selectedValue.substring(0,2);
-		String[] facilitiesList = serverService.getFacilities (prefix);
-		Boolean enabled = facilitySpinner.isEnabled();
-		int drawable = enabled ? R.drawable.custom_spinner_item_disabled : R.drawable.custom_spinner_item_enabled;
-		ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String> (this.getBaseContext (), drawable, facilitiesList);
-		facilitySpinner.setAdapter (arrayAdapter);
 		
-		String facility = App.getFacility();
-		if(facility != "")
-		{
-			ArrayAdapter facilityAdap = (ArrayAdapter) facilitySpinner.getAdapter(); //cast to an ArrayAdapter
-			int spinnerPosition = facilityAdap.getPosition(facility);
-			//set the default according to value
-			facilitySpinner.setSelection(spinnerPosition);
-		}*/
-		
+		// Get List of Districts and Fill the Spinner
 		String[] districtList = serverService.getDistricts ();
 		Boolean enabled = districtSpinner.isEnabled();
 		int drawable = enabled ? R.drawable.custom_spinner_item_enabled : R.drawable.custom_spinner_item_disabled;
 		ArrayAdapter<String> districtAdapter = new ArrayAdapter<String> (this.getBaseContext (), drawable, districtList);
 		districtSpinner.setAdapter (districtAdapter);
 		
+		// Set spinner position a/c to selection
 		String district = App.getDistrict();
 		if(district != "")
 		{
@@ -392,12 +359,14 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			districtSpinner.setSelection(spinnerPosition);
 		}
 		
+		// Get List of Screening Strategies and Fill the Spinner
 		String[] screeningStrategiesList = serverService.getScreeningStrategiesFromLocal ();
 		enabled = screeningStrategySpinner.isEnabled();
 		drawable = enabled ? R.drawable.custom_spinner_item_enabled : R.drawable.custom_spinner_item_disabled;
         ArrayAdapter<String> screeningStrategiesAdapter = new ArrayAdapter<String> (this.getBaseContext (), drawable, screeningStrategiesList);
 		screeningStrategySpinner.setAdapter (screeningStrategiesAdapter);
 		
+		// Set spinner position a/c to selection
 		String screeningStrategy = App.getScreeningStrategy();
 		if(screeningStrategy != "")
 		{
@@ -445,9 +414,8 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 		int maxLength;
 		switch (id)
 		{
-		// Show a list of all locations to choose. This is to limit the
-		// locations displayed on site spinner
 			case DISTRICT_DIALOG :
+				// Display Edit Text on Dialog with search button...
 				builder.setTitle (getResources ().getString (R.string.district_id));
 				final EditText districtText = new EditText (this);
 				districtText.setTag ("district");
@@ -566,6 +534,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 				
 				
 			case FACILITY_DIALOG :
+				// Display Edit Text on Dialog with Search Button
 				builder.setTitle (getResources ().getString (R.string.facility_id));
 				final EditText facilityText = new EditText (this);
 				facilityText.setTag ("facility");
@@ -637,7 +606,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 										{
 											App.setFacility (facility);
 
-											// Save district in preferences
+											// Save Facility in preferences
 											SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 											SharedPreferences.Editor editor = preferences.edit ();
 											editor.putString(Preferences.FACILITY, App.getFacility ());
@@ -684,6 +653,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 				
 				
 			case SCREENING_STRATEGY_DIALOG :
+				// Display Edit on Dialog with Search Button
 				builder.setTitle (getResources ().getString (R.string.screening_strategy_id));
 				final EditText screeningStrategyText = new EditText (this);
 				screeningStrategyText.setTag ("screening_strategy");
@@ -755,7 +725,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 										{
 											App.setScreeningStrategy(strategy);
 
-											// Save district in preferences
+											// Save Screening Strategy in preferences
 											SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 											SharedPreferences.Editor editor = preferences.edit ();
 											editor.putString(Preferences.SCREENING_STRATEGY, App.getScreeningStrategy ());
@@ -819,6 +789,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			SharedPreferences.Editor editor = preferences.edit ();
 			editor.putString(Preferences.DISTRICT, App.getDistrict ());
 			
+			// Fill Facility Spinner a/c to district selected
 			Boolean enabled = facilitySpinner.isEnabled();
 			int drawable = enabled ? R.drawable.custom_spinner_item_enabled : R.drawable.custom_spinner_item_disabled;
 			String prefix = selectedValue.substring(0,2);
@@ -827,43 +798,33 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			facilitySpinner.setAdapter(null);
 			facilitySpinner.setAdapter (facilityAdapter);
 			
-//			if(facilityRadioButton.isChecked())
-//			{
-				
-				String facility = App.getFacility();
-				if(facility != "")
-				{
-					ArrayAdapter facilityAdap = (ArrayAdapter) facilitySpinner.getAdapter(); //cast to an ArrayAdapter
-					int spinnerPosition = facilityAdap.getPosition(facility);
-					//set the default according to value
-					if(spinnerPosition != -1)
-						facilitySpinner.setSelection(spinnerPosition);
-				}
-				
-				if(facilitySpinner.getSelectedItemPosition () != -1)
-				{
-					selectedValue =facilitySpinner.getSelectedItem().toString();
-					App.setFacility (selectedValue);
-					locationIdTextView.setText(App.getFacility());
-				}
-				else
-				{
-					App.setFacility ("");
-					locationIdTextView.setText(App.getFacility());
-				}
-				
-				App.setLocation(App.getFacility());
-				// Save location in preferences
-				editor.putString(Preferences.LOCATION, App.getLocation ());
+			//Set Default value for facility...
+			String facility = App.getFacility();
+			if(facility != "")
+			{
+				ArrayAdapter facilityAdap = (ArrayAdapter) facilitySpinner.getAdapter(); //cast to an ArrayAdapter
+				int spinnerPosition = facilityAdap.getPosition(facility);
+				//set the default according to value
+				if(spinnerPosition != -1)
+					facilitySpinner.setSelection(spinnerPosition);
+			}
 			
-			/*}
+			if(facilitySpinner.getSelectedItemPosition () != -1)
+			{
+				selectedValue =facilitySpinner.getSelectedItem().toString();
+				App.setFacility (selectedValue);
+				locationIdTextView.setText(App.getFacility());
+			}
 			else
 			{
-				App.setLocation(App.getFacility());
-				// Save location in preferences
+				App.setFacility ("");
 				locationIdTextView.setText(App.getFacility());
-				editor.putString(Preferences.LOCATION, App.getLocation ());
-			}*/
+			}
+			
+			App.setLocation(App.getFacility());
+			// Save location in preferences
+			editor.putString(Preferences.LOCATION, App.getLocation ());
+			
 			editor.apply ();
 		}
 		
@@ -872,25 +833,25 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			String selectedValue =spinner.getSelectedItem().toString();
 			App.setFacility (selectedValue);
 
+			// Save Facility in preferences 
 			SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 			SharedPreferences.Editor editor = preferences.edit ();
 			editor.putString(Preferences.FACILITY, App.getFacility ());
 			
+			// Location preference is Facility
+			if(facilitySpinner.getSelectedItemPosition () != -1)
+			{
+				locationIdTextView.setText(App.getFacility());
+			}
+			else
+			{
+				App.setFacility ("");
+				locationIdTextView.setText(App.getFacility());
+			}
 			
-				if(facilitySpinner.getSelectedItemPosition () != -1)
-				{
-					
-					locationIdTextView.setText(App.getFacility());
-				}
-				else
-				{
-					App.setFacility ("");
-					locationIdTextView.setText(App.getFacility());
-				}
-				
-				App.setLocation(App.getFacility());
-				// Save location in preferences
-				editor.putString(Preferences.LOCATION, App.getLocation ());
+			App.setLocation(App.getFacility());
+			// Save location in preferences
+			editor.putString(Preferences.LOCATION, App.getLocation ());
 				
 			
 			editor.apply ();
@@ -901,6 +862,7 @@ public class LocationSetupActivity extends Activity implements IActivity, OnClic
 			String selectedValue =spinner.getSelectedItem().toString();
 			App.setScreeningStrategy (selectedValue);
 			
+			// Save Screening Strategy in preferences
 			SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences (getBaseContext());
 			SharedPreferences.Editor editor = preferences.edit ();
 			editor.putString(Preferences.SCREENING_STRATEGY, App.getScreeningStrategy());
