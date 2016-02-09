@@ -180,11 +180,21 @@ public class MobileService
 		return true;
 	}
 
+	/**
+	 * returns MobileService instance
+	 * @return MobileService
+	 */
 	public static MobileService getService ()
 	{
 		return MobileService.service;
 	}
 
+	/**
+	 * 
+	 * Handles requests forwarded through Servlet.
+	 * @param request
+	 * @return String(response)
+	 */
 	public String handleEvent (HttpServletRequest request)
 	{
 		System.out.println ("Posting to Server..");
@@ -317,6 +327,13 @@ public class MobileService
 		return response;
 	}
 	
+	/**
+	 * Authenticate username & password through openmrs API
+	 * 
+	 * @param username
+	 * @param password
+	 * @return
+	 */
 	public String authenticate(String username, String password)
 	{
 		String result = "";
@@ -336,665 +353,402 @@ public class MobileService
 		return result;
 	}
 
-	private String getLocationSetupAndPerformanceFeedback (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String username = values.getString ("username");
-			User user = Context.getUserService().getUserByUsername(username);
-			Person person = user.getPerson();
-			PersonAttribute locationAttribute = person.getAttribute(13);
-			String location = "";
-			if(locationAttribute != null)
-				location = locationAttribute.toString();
-			PersonAttribute screeningTypeAttribute = person.getAttribute(14);
-			String screeningType = "";
-			if(screeningTypeAttribute != null)
-				screeningType = screeningTypeAttribute.toString();
-			
-			JSONObject locationObj = new JSONObject ();
-			locationObj.put ("result", "SUCCESS");
-			locationObj.put ("facility", location);
-			locationObj.put ("screener_type", screeningType);
-			
-			// Get screener numbers...
-			String selectQuery = "SELECT * from openmrs_rpt.daily_feedback_message where screener_id = '"+username+"' and sent = '0'";
-		    String[][] data = executeQuery (selectQuery, null);
-		    
-		    if(data.length != 0){ // if any ...
-			    locationObj.put("percentage", data[0][6]);
-			    locationObj.put("total_screened", data[0][4]);
-			    locationObj.put("sputum_submitted", data[0][5]);
-			    locationObj.put("date", data[0][1]);
-			    
-			    String updateQuery = "Update openmrs_rpt.daily_feedback_message" +
-		 				" set sent = '1' " +
-		 				" where screener_id = '"+username+"'" ;
-
-			    execute(updateQuery);  // mark as sent.
-			    
-		    }
-		    else{
-			    locationObj.put("percentage", "");
-			    locationObj.put("total_screened", "");
-			    locationObj.put("sputum_submitted", "");
-			    locationObj.put("date", "");
-		    }
-			 
-			json = locationObj.toString ();
-			
-		}	
+	/**
+	 * 
+	 * Checks if all pre-requisite for the given encounter type submission are present for given patient Id 
+	 * @param patientId
+	 * @param encounterType
+	 * @return
+	 */
+	public String checkForPrerequisite(String patientId, String encounterType){
 		
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
+		List<Patient> patients = new ArrayList<Patient> ();
+		patients = Context.getPatientService ().getPatients (patientId);
+		if(patients == null){
+			return CustomMessage.getErrorMessage(ErrorType.PATIENT_NOT_FOUND);
 		}
-		return json;
-	}
-	
-	private String getScreeningInfo (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String username = values.getString ("username");
-			String date = values.getString ("date");
-			User user = Context.getUserService().getUserByUsername(username);
-			
-			if(user == null){
-				
-				JSONObject locationObj = new JSONObject ();
-				locationObj.put ("result", "FAIL");
-				json = locationObj.toString ();
-				return json;
-			}
-			
-			//"+username+"
-			JSONObject locationObj = new JSONObject ();
-			locationObj.put ("result", "SUCCESS");
-			
-			String selectQuery2 = "select IFNULL(SUM(case when (e.encounter_type = 1) then 1 else 0 end),0) , IFNULL(SUM(case when (e.encounter_type = 2) then 1 else 0 end),0) , IFNULL(SUM(case when ( pa.value = 'Suspect' and e.encounter_type = 1 ) then 1 else 0 end),0) , IFNULL(SUM(case when ( pa.value = 'Non-Suspect' and e.encounter_type = 1 ) then 1 else 0 end),0) " + 
-					"from openmrs.encounter e , openmrs.encounter_provider ep, openmrs.provider p, openmrs.person_attribute pa  " +
-					"where e.encounter_datetime = '"+date+" %' and e.encounter_id = ep.encounter_id and ep.provider_id = p.provider_id and p.identifier = '"+username+"' and ep.voided = 0 and (e.encounter_type = 1 or e.encounter_type = 2) and e.patient_id = pa.person_id and pa.person_attribute_type_id = 12;";
-			String[][] data = executeQuery (selectQuery2, null);
-		    
-		    if(data.length != 0){
-			    locationObj.put("total_screened", data[0][0]);
-			    locationObj.put("total_sputum_submitted", data[0][1]);
-			    locationObj.put("total_suspect", data[0][2]);
-			    locationObj.put("total_non_suspect", data[0][3]);
-			    
-			    if(!data[0][0].equals("0")){
-			    	
-			    	String selectQuery1 = "select concat(pn.given_name, ' ', pn.family_name), pr.gender, DATEDIFF(curdate(), pr.birthdate) / 365.25 as age, pi.identifier , pa.value " +
-							"from openmrs.encounter e , openmrs.encounter_provider ep, openmrs.provider p, openmrs.person_name pn, openmrs.person pr, openmrs.patient_identifier pi , openmrs.person_attribute pa "+
-							"where e.encounter_datetime = '"+date+" %' and e.encounter_id = ep.encounter_id and ep.provider_id = p.provider_id and p.identifier = '"+username+"' and ep.voided = 0 and e.encounter_type = 1 and e.patient_id = pn.person_id and e.patient_id = pr.person_id and e.patient_id = pi.patient_id and pi.identifier_type = 1 and e.patient_id = pa.person_id and pa.person_attribute_type_id = 12;";
-			    	String[][] screeningNames = executeQuery (selectQuery1, null);
-			    	
-			    	for(int i = 0; i<screeningNames.length; i++){
-			    		
-			    		Float f = Float.parseFloat(screeningNames[i][2]);
-			    		int no = f.intValue();
-			    		locationObj.put("name_"+i, screeningNames[i][0]+" - "+screeningNames[i][1]+" - "+no+";:;"+screeningNames[i][3]+";:;"+screeningNames[i][4]);
-			    		
-			    	}
-			    	
-			    }
-			    
-		    }
-		    else{
-			    locationObj.put("result", "FAIL");
-		    }
-			 
-			json = locationObj.toString ();
-			System.out.println(json);
-		}	
+		Patient patient = patients.get(0);
 		
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-	
-	
-	private String getSputumSubmissionStatus (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String pid = values.getString ("p_id");
+		// if encounter Type is Sputum Result
+		if(encounterType.equals("Sputum Result")){
 			
-			List<Patient> patients = new ArrayList<Patient> ();
-			patients = Context.getPatientService ().getPatients (pid);
-			if(patients == null){
-				return json;
-			}
-			Patient patient = patients.get(0);
-			
+			// Get 'Sputum Result' Encounter Type 
 			Collection<EncounterType> sputumResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
-			
-			/*
-			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
-			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
-			 * encounterTypes, 7-Collection<Provider> providers,
-			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
-			 * 10-boolean includeVoided)
-			 */
+			// Get all Encounters from encounter type 'Sputum Result' for patient id
 			List<Encounter> sputumResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumResultEncounterType, null, null, null, false);
 			
-			if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){
+			
+			// Get 'Sputum Submission' Encounter Type
+			Collection<EncounterType> sputumSubmissionEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
+			// Get all Encounters from encounter type 'Sputum submission' for patient id
+			List<Encounter> sputumSubmissionEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumSubmissionEncounterType, null, null, null, false);
+			
+			
+			//If no encounter found check if 'Sputum Submission' form is submitted with 'Sputum Sample' as 'Accept' 
+			if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){	
 				
-				Collection<EncounterType> sputumSubmissionEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
-				List<Encounter> sputumSubmissionEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumSubmissionEncounterType, null, null, null, false);
-				
+				// If Null return false - Prerequisite fails
 				if(sputumSubmissionEncounters == null || sputumSubmissionEncounters.size() == 0)
-					return json;	
+					return CustomMessage.getErrorMessage(ErrorType.SPUTUM_SUBMISSION_NOT_FOUND);	
 				else{
 					
+					// Get 'Sputum Sample'
 					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Sputum Sample");
+					// Get All observations for encounter type and concept
 					List<Obs> observations = Context.getObsService ().getObservations (null, sputumSubmissionEncounters, concepts, null, null, null, null, null, null, null, null, false);
 					
 					for (Obs obs : observations)
 					{
 						Concept sputumSample = obs.getValueCoded();
 						String ss = sputumSample.getName().toString();
-						if (ss.equals ("Accept"))
+						if (ss.equals ("Accept"))   // if concept value is 'Accept' - Prerequisite Pass
 						{
-							JSONObject jsonObj = new JSONObject ();
-							jsonObj.put ("status", "YES");
-							json = jsonObj.toString ();
-							return json;
+							return "";
 						}
 					}
 					
-					JSONObject jsonObj = new JSONObject ();
-					jsonObj.put ("status", "No");
-					json = jsonObj.toString ();
-					return json;
+					return CustomMessage.getErrorMessage(ErrorType.NO_ACCEPTED_SPUTUM_SUBMISSION_FOUND);  // Prerequisite fails
 				}
 					
 			}
 			else{
-				return json;
-			}
-			
-		}	
-		
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-	
-	
-	private String getPatientIdFromTestId (String formType, JSONObject values)
-	{
-
-		String json = null;
-		try
-		{
-			String id = values.getString ("test_id");
-			String result = values.getString ("result");
-
-			String patientId = null;
-			Collection<EncounterType> encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
-
-			/*
-			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
-			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
-			 * encounterTypes, 7-Collection<Provider> providers,
-			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
-			 * 10-boolean includeVoided)
-			 */
-
-			// 1 2 3 4 5 6 7 8 9 10
-			List<Encounter> encounters = Context.getEncounterService ().getEncounters (null, null, null, null, null, encounterType, null, null, null, false);
-			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
-			/*
-			 * 1 - whom 2 - encounters, 3 - questions, 4 - answers, 5 -
-			 * personTypes, 6 - locations, 7 - sort, 8 - mostRecentN, 9 -
-			 * obsGroupId, 10 - fromDate, 11 - toDate, 12 - includeVoidedObs
-			 */
-			// 1 2 3 4 5 6 7 8 9 10 11 12
-			List<Obs> observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
-			for (Obs obs : observations)
-			{
-				String testId = obs.getValueText ();
-				if (testId.equals (id))
-				{
-					patientId = obs.getPatient ().getPatientIdentifier ().toString ();
+				
+				  
+				if(sputumResultEncounters.size() == sputumSubmissionEncounters.size())  // Prerequisite fails
+					return CustomMessage.getErrorMessage(ErrorType.SPUTUM_SUBMISSION_NOT_FOUND);
+				else {
+					
+					// Get 'Sputum Sample' Concept
+					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Sputum Sample");
+					// Get All observations for encounter type and concept
+					List<Obs> observations = Context.getObsService ().getObservations (null, sputumSubmissionEncounters, concepts, null, null, null, null, null, null, null, null, false);
+					
+					int count = 0; 
+					for (Obs obs : observations)
+					{
+						Concept sputumSample = obs.getValueCoded();
+						String ss = sputumSample.getName().toString();
+						if (ss.equals ("Accept"))   // if concept value is 'Accept'
+						{
+							count++;  // no of 'sputumSample' as accept
+						}
+					}
+					
+					if (count > sputumResultEncounters.size()) //if count is greater than SputumResult encounter size
+						return ""; // Prerequisite Pass
+					else 
+						return CustomMessage.getErrorMessage(ErrorType.NO_ACCEPTED_SPUTUM_SUBMISSION_FOUND); // Prerequisite fails
 				}
 			}
-
-			if (patientId != null)
-			{
-
-				if (result.equals ("Y"))
-				{
-					List<Patient> patients = Context.getPatientService ().getPatients (patientId);
-					encounterType = null;
-					encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
-					encounters = null;
-					encounters = Context.getEncounterService ().getEncounters (patients.get (0), null, null, null, null, encounterType, null, null, null, false);
-					concepts = null;
-					if (encounters.size () != 0)
+			
+		}
+		// if encounter type is Treatment Initiation
+		else if (encounterType.equals("Treatment Initiation")){
+			
+			// Get 'Treatment Initiation' Encounter Type 
+			Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
+			// Get all Encounters from encounter type 'Treatment Initiation' for patient id
+			List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
+			
+			// if encounter in null
+			if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0){
+				// Get 'Sputum Result' Encounter Type 
+				Collection<EncounterType> sputumResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
+				// Get all Encounters from encounter type 'Sputum Result' for patient id
+				List<Encounter> sputumResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumResultEncounterType, null, null, null, false);
+				
+				// Get 'Culture Result' Encounter Type 
+				Collection<EncounterType> cultureResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Culture Results");
+				// Get all Encounters from encounter type 'Sputum Result' for patient id
+				List<Encounter> cultureResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, cultureResultEncounterType, null, null, null, false);
+				
+				// if encounter is null
+				if((sputumResultEncounters == null || sputumResultEncounters.size() == 0) && (cultureResultEncounters == null || cultureResultEncounters.size() == 0)){
+					return CustomMessage.getErrorMessage(ErrorType.GENEXPERT_RESULT_NOT_FOUND);   // Prerequisite fails
+				}
+				
+				if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){
+					
+				}
+				else{
+					// Get 'GeneXpert Result' Concept
+					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("GeneXpert Result");
+					// Get All observations for encounter type and concept
+					List<Obs> observations = Context.getObsService ().getObservations (null, sputumResultEncounters, concepts, null, null, null, null, null, null, null, null, false);
+					
+					for (Obs obs : observations)
 					{
-						concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
-						observations = null;
-						observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
-						if (observations != null)
+						Concept genexpertResult = obs.getValueCoded();
+						String ss = genexpertResult.getName().toString();
+						if (ss.equals ("MTB Positive")) // if value is MTB Positive
 						{
-							for (Obs obs : observations)
+							return ""; // Prerequisite Pass
+						}
+					}
+					
+					// if encounter is null
+					if(cultureResultEncounters == null || cultureResultEncounters.size() == 0){
+						
+					}
+					else{
+						// Get 'Culture Result' Concept
+						concepts = Context.getConceptService ().getConceptsByName ("Culture Result");
+						// Get All observations for encounter type and concept
+						observations = Context.getObsService ().getObservations (null, cultureResultEncounters, concepts, null, null, null, null, null, null, null, null, false);
+						
+						for (Obs obs : observations)
+						{
+							Concept cultureResult = obs.getValueCoded();
+							String ss = cultureResult.getName().toString();
+							if (ss.equals ("Culture Positive")) // if value is MTB Positive
 							{
-								String testId = obs.getValueText ();
-								if (testId.equals (id))
-								{
-									return json;
-								}
+								return ""; // Prerequisite Pass
 							}
 						}
+					}	
+					
+					return CustomMessage.getErrorMessage(ErrorType.POSITIVE_GENEXPERT_RESULT_NOT_FOUND); // Prerequisite fails
+				}
+			}
+			else{ // if encounter is not null
+				
+				// Get 'Treatment Initiated' Concept
+				List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
+				// Get All observations for encounter type and concept
+				List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
+				
+				for (Obs obs : observations)
+				{
+					Concept treatmentInitiated = obs.getValueCoded();
+					String ss = treatmentInitiated.getName().toString();
+					if (ss.equals ("Yes"))  // if value is Yes
+					{
+						return CustomMessage.getErrorMessage(ErrorType.TREATMENT_ALREADY_INITIATED); // Prerequisite fails
 					}
 				}
+				return ""; // Prerequisite Pass
 
-				JSONObject jsonObj = new JSONObject ();
-				jsonObj.put ("pid", patientId);
-				json = jsonObj.toString ();
-			}
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	private String getPatientName (String formType, JSONObject values)
-	{
-		JSONObject json = new JSONObject ();
-		try
-		{
-			List<Patient> patients = new ArrayList<Patient> ();
-			String patientId = values.getString ("patient_id");
-			if (!patientId.equals (""))
-			{
-				patients = Context.getPatientService ().getPatients (patientId);
-				if (patients != null)
-				{
-					Patient p = patients.get (0);
-					json.put ("first_name", p.getPersonName ().getGivenName ());
-					json.put ("last_name", p.getPersonName ().getFamilyName ());
-				}
-			}
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		finally
-		{
-			try
-			{
-				if (json.length () == 0)
-				{
-					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
-				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace ();
-			}
-		}
-		return json.toString ();
-	}
-
-	private String getPatientNameFromTestId (String formType, JSONObject values){
-		
-		JSONObject json = new JSONObject ();
-		try
-		{
-			String id = values.getString ("test_id");
-			String result = values.getString ("result");
-			List<Patient> patients = new ArrayList<Patient> ();
-
-			String patientId = null;
-			Collection<EncounterType> encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
-
-			/*
-			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
-			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
-			 * encounterTypes, 7-Collection<Provider> providers,
-			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
-			 * 10-boolean includeVoided)
-			 */
-
-			// 1 2 3 4 5 6 7 8 9 10
-			List<Encounter> encounters = Context.getEncounterService ().getEncounters (null, null, null, null, null, encounterType, null, null, null, false);
-			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
-			/*
-			 * 1 - whom 2 - encounters, 3 - questions, 4 - answers, 5 -
-			 * personTypes, 6 - locations, 7 - sort, 8 - mostRecentN, 9 -
-			 * obsGroupId, 10 - fromDate, 11 - toDate, 12 - includeVoidedObs
-			 */
-			// 1 2 3 4 5 6 7 8 9 10 11 12
-			List<Obs> observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
-			for (Obs obs : observations)
-			{
-				String testId = obs.getValueText ();
-				if (testId.equals (id))
-				{
-					patientId = obs.getPatient ().getPatientIdentifier ().toString ();
-				}
-			}
-			
-			if(patientId!=null){
-				
-				patients = Context.getPatientService ().getPatients (patientId);
-				if (patients != null)
-				{
-					Patient p = patients.get (0);
-					json.put ("first_name", p.getPersonName ().getGivenName ());
-					json.put ("last_name", p.getPersonName ().getFamilyName ());
-				}
-				
 			}
 			
 		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json.toString ();
-		
-	}
-	
-	
-	public HttpServletRequest getRequest ()
-	{
-		return request;
-	}
-
-	public String getUser (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String username = values.getString ("username");
-			User user = Context.getUserService ().getUserByUsername (username);
-			Person person = user.getPerson();
-			Collection<Provider> providers = Context.getProviderService().getProvidersByPerson(person);
+		// if encounter type is Treatment Followup
+		else if(encounterType.equals("Treatment Followup")){
 			
-			JSONObject userObj = new JSONObject ();
+			// Get 'Treatment Initiation' Encounter Type 
+			Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
+			// Get all Encounters from encounter type 'Treatment Initiation' for patient id
+			List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
 			
-			if(providers.size() == 0){
-				
-				userObj.put ("ERROR", "MISSING_PROVIDER");
-				
+			// Get 'Treatment Initiated' Concept
+			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
+			// Get All observations for encounter type and concept
+			List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
+			
+			
+			// if encounter is null
+			if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0){
+				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_INITIATION_FORM_NOT_FILLED);  // Prerequisite fails
 			}
 			else{
-			
-				userObj.put ("result", "SUCCESS");
-				userObj.put ("id", user.getUserId ());
-				userObj.put ("name", user.getUsername ());
-				userObj.put ("sname", user.getGivenName());
-			
+				
+				for (Obs obs : observations)
+				{
+					Concept treatmentInitiated = obs.getValueCoded();
+					String ss = treatmentInitiated.getName().toString();  // if value is No
+					if (ss.equals ("Yes"))
+					{
+						return "";  // Prerequisite Pass
+					}
+				}
+				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_NOT_INITIATED);  // Prerequisite Fail
+				
 			}
 			
-			json = userObj.toString ();
 		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	public String getLocation (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String locationName = values.getString ("location_name");
-			List<Location> locations = Context.getLocationService ().getLocations (locationName);
-			Location location = locations.get (0);
-			JSONObject locationObj = new JSONObject ();
-			locationObj.put ("id", location.getLocationId ());
-			locationObj.put ("name", location.getName ());
-			json = locationObj.toString ();
-
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	public String getDistrict (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String locationName = values.getString ("location_name");
-			List<Location> locations = Context.getLocationService ().getLocations (locationName);
-			Location location = locations.get (0);
-			int size = locations.size ();
-
-			JSONObject locationObj = new JSONObject ();
-			locationObj.put ("id", location.getLocationId ());
-			locationObj.put ("name", location.getName ());
-
-			locationObj.put ("size", size);
-
-			for (int i = 1; i < size; i++)
-			{
-				location = locations.get (i);
-				locationObj.put ("id" + i, location.getId ());
-				locationObj.put ("name" + i, location.getName ());
-			}
-
-			json = locationObj.toString ();
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	public String[][] getSmsData (String to, String from, String username, String password)
-	{
-		String[][] data = null;
-		try
-		{
-			Context.openSession ();
-			Context.authenticate (username, password);
-			String selectQuery = "SELECT Date,Name,Facility,District,originator,recieveDate,text FROM openmrs_rpt.data_screener ,"
-					+ "(SELECT originator, recieveDate, text, DATE_FORMAT(recieveDate, '%y-%m-%d') as Date FROM (Select * from smstarseel.inboundmessage where recieveDate >= '" + from
-					+ "' and recieveDate <= '" + to + " 23:59:59.999' order by recieveDate desc) as temp group by Date, originator order by recieveDate desc) as screening_summary "
-					+ "where data_screener.PhoneNumber = screening_summary.originator order by recieveDate desc;";
-			data = executeQuery (selectQuery, null);
-		}
-		catch(Exception e){
+		// if encounter type is Treatment Outcome
+		else if(encounterType.equals("Treatment Outcome")){
 			
-		}
-		finally
-		{
-			Context.closeSession ();
-		}
-		return data;
+			// Get 'Treatment Outcome' Encounter Type 
+			Collection<EncounterType> treatmentOuctomeEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Outcome");
+			// Get all Encounters from encounter type 'Treatment Outcome' for patient id
+			List<Encounter> treatmentOutcomeEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentOuctomeEncounterType, null, null, null, false);
+			
+			
+			// if encounter is null
+			if(treatmentOutcomeEncounters == null || treatmentOutcomeEncounters.size() == 0){
+				
+				// Get 'Treatment Initiation' Encounter Type 
+				Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
+				// Get all Encounters from encounter type 'Treatment Initiation' for patient id
+				List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
+				
+				// if encounter is null
+				if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0)
+					return CustomMessage.getErrorMessage(ErrorType.TREATMENT_INITIATION_FORM_NOT_FILLED);  // Prerequisite Fail
+				else{
+					
+					// Get 'Treatment Initiated' Concept
+					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
+					// Get All observations for encounter type and concept
+					List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
+					
+					for (Obs obs : observations)
+					{
+						Concept treatmentInitiated = obs.getValueCoded();
+						String ss = treatmentInitiated.getName().toString();
+						if (ss.equals ("Yes"))
+						{
+							return "";    // Prerequisite true
+						}
+					}
+					return CustomMessage.getErrorMessage(ErrorType.TREATMENT_NOT_INITIATED); 	// Prerequisite Fail				
+				}
+				
+			}
+			else
+				
+				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_OUTCOME_ALREADY_FILLED); // Prerequisite Fail
+			
+		} 
+		
+		return "";
 	}
-
+	
 	/**
-	 * Prepares and returns screening numbers by users
-	 * 
-	 * @param granularity
-	 *            pass day, week or month to get the level of aggregate
-	 * @return
-	 */
-	public String[][] getScreeningData (String granularity)
-	{
-
-		String dateFilter = "year(pt.date_created) = year(curdate()) ";
-		if (granularity.equals ("month"))
-		{
-			dateFilter += "and month(pt.date_created) = month(curdate()) ";
-		}
-		else if (granularity.equals ("week"))
-		{
-			dateFilter += "and month(pt.date_created) = month(curdate()) and week(pt.date_created) = week(curdate()) ";
-		}
-		else if (granularity.equals ("day"))
-		{
-			dateFilter += "and month(pt.date_created) = month(curdate()) and day(pt.date_created) = day(curdate()) ";
-		}
-
-		String selectQuery = "select substring(u.username, 1, 2), u.username, count(pt.patient_id), count(CASE WHEN p_att.value = 'Suspect' then 1 else null end), count(CASE WHEN p_att.value = 'Non-Suspect' then 1 else null end)"
-				+ " from  openmrs.users as u , openmrs.patient as pt , openmrs.person_attribute as p_att"
-				+ " where pt.creator = u.user_id and pt.patient_id = p_att.person_id and p_att.person_attribute_type_id = 12 and " + dateFilter + " group by u.username;";
-
-		String[][] data = executeQuery (selectQuery, null);
-		return data;
-	}
-
-	public String getScreeningStrategies (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			Concept screeningStrategyConcept = Context.getConceptService ().getConceptByName ("Screening Strategy");
-			List<ConceptWord> concepts = Context.getConceptService ().getConceptAnswers ("", Context.getLocale (), screeningStrategyConcept);
-			JSONObject conceptObj = new JSONObject ();
-			int size = concepts.size ();
-			conceptObj.put ("size", size);
-			int counter = 0;
-			for (ConceptWord c : concepts)
-			{
-
-				Concept con = c.getConcept ();
-				conceptObj.put ("name" + counter, con.getDescription ());
-				conceptObj.put ("id" + counter, con.getId ());
-				counter++;
-			}
-			json = conceptObj.toString ();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	public String getStrategy (String formType, JSONObject values)
-	{
-
-		String json = null;
-		try
-		{	
-			String strategyName = values.getString ("location_name");
-			Concept screeningStrategyConcept = Context.getConceptService ().getConceptByName (strategyName);
-			
-			JSONObject conceptObj = new JSONObject ();
-			
-			if(screeningStrategyConcept == null){
-				conceptObj.put ("status", "FAIL");
-			}
-			else{
-				conceptObj.put ("status", "OK");
-				conceptObj.put ("name", screeningStrategyConcept.getDescription ());
-				conceptObj.put ("id", screeningStrategyConcept.getId ());
-			}
-
-			json = conceptObj.toString ();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	public String getPatient (String formType, JSONObject values)
-	{
-		String json = null;
-		try
-		{
-			String patientId = values.getString ("patient_id");
-			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
-			if (patients == null)
-			{
-				return json;
-			}
-			if (patients.isEmpty ())
-			{
-				return json;
-			}
-			Patient patient = patients.get (0);
-			JSONObject patientObj = new JSONObject ();
-			patientObj.put ("id", patient.getPatientId ());
-			patientObj.put ("name", patient.getPersonName ().getFullName ());
-			json = patientObj.toString ();
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json;
-	}
-
-	/**
-	 * Warning! TNT Method, handle with care. Ever heard of SETI? Yeah, it's
-	 * something like that. It searches for details about a Patient
+	 * Save Client's Contact and Address information. Also creates and Encounter
+	 * without Observations
 	 * 
 	 * @param formType
 	 * @param values
 	 * @return
 	 */
-	public String getPatientDetail (String formType, JSONObject values)
+	@SuppressWarnings("deprecation")
+	public String doCustomerInfo (String formType, JSONObject values)
 	{
 		JSONObject json = new JSONObject ();
+		String error = "";
 		try
 		{
-			List<Patient> patients = new ArrayList<Patient> ();
+			String location = values.getString ("location").toString ();
+			String username = values.getString ("username").toString ();
 			String patientId = values.getString ("patient_id");
-			if (!patientId.equals (""))
+			String encounterType = values.getString ("encounter_type");
+			String formDate = values.getString ("form_date");
+			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
+			String encounterLocation = values.getString ("encounter_location");
+			String provider = values.getString ("provider");
+			String address1 = values.getString ("address1");
+			String address2 = values.getString ("address2");
+			String stateProvince = values.getString ("stateProvince");
+			String address4 = values.getString ("address4");
+			String countyDistrict = values.getString ("countyDistrict");
+			String cityVillage = values.getString ("cityVillage");
+			String country = values.getString ("country");
+			
+			JSONArray attributes = new JSONArray (values.getString ("attributes"));
+			// Get Creator
+			User creatorObj = Context.getUserService ().getUserByUsername (username);
+			// Get Location
+			Location locationObj = Context.getLocationService ().getLocation (location);
+			// Get Encounter type
+			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
+			// Get Patient object
+			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
+			if (patients.isEmpty ())
+				throw new Exception ();
+			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
+			// Get Person object
+			Person person = Context.getPersonService ().getPerson (patient.getPersonId ());
+			// Add address details
 			{
-				patients = Context.getPatientService ().getPatients (patientId);
-				if (patients != null)
+				PersonAddress address = new PersonAddress ();
+				address.setAddress1 (address1);
+				address.setAddress2 (address2);
+				address.setCityVillage (cityVillage);
+				address.setCountry (country);
+				address.setStateProvince (stateProvince);
+				address.setAddress4 (address4);
+				address.setCountyDistrict (countyDistrict);
+				address.setCreator (creatorObj);
+				address.setDateCreated (new Date ());
+				person.addAddress (address);
+			}
+			// Add patient attributes
+			for (int i = 0; i < attributes.length (); i++)
+			{
+				JSONObject pair = attributes.getJSONObject (i);
+				PersonAttributeType personAttributeType;
+				try
 				{
-					Patient p = patients.get (0);
-					json.put ("name", p.getPersonName ().getGivenName () + " " + p.getPersonName ().getFamilyName ());
-					json.put ("gender", p.getGender ());
-					json.put ("age", p.getAge ());
-					List<Encounter> encountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
-					JSONArray encountersArray = new JSONArray ();
-					for (Encounter e : encountersByPatient)
-					{
-						JSONObject jsonObj = new JSONObject ();
-						jsonObj.put ("encounter", e.getEncounterType ().getName ());
-						jsonObj.put ("date", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
-						encountersArray.put (jsonObj);
-					}
-					if (encountersArray.length () != 0)
-					{
-						json.put ("encounters", encountersArray.toString ());
-					}
+					personAttributeType = Context.getPersonService ().getPersonAttributeTypeByName (pair.getString ("attribute"));
+					PersonAttribute attribute = new PersonAttribute ();
+					attribute.setAttributeType (personAttributeType);
+					attribute.setValue (pair.getString ("value"));
+					attribute.setCreator (creatorObj);
+					attribute.setDateCreated (new Date ());
+					person.addAttribute (attribute);
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace ();
 				}
 			}
+			Context.getPersonService ().savePerson (person);
+			Encounter encounter = new Encounter ();
+			encounter.setEncounterType (encounterTypeObj);
+			encounter.setPatient (patient);
+			// In case of Encounter location different than login location
+			if (!encounterLocation.equalsIgnoreCase (location))
+			{
+				locationObj = Context.getLocationService ().getLocation (encounterLocation);
+			}
+			encounter.setLocation (locationObj);
+			encounter.setEncounterDatetime (encounterDatetime);
+			encounter.setCreator (creatorObj);
+			encounter.setDateCreated (new Date ());
+			if (creatorObj.getUsername ().equals (provider))
+				encounter.setProvider (creatorObj);
+			// Save encounter without observations
+			Context.getEncounterService ().saveEncounter (encounter);
+			json.put ("result", "SUCCESS");
+		}
+		catch (NonUniqueObjectException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
+		}
+		catch (NullPointerException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (IllegalArgumentException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
 		}
 		catch (JSONException e)
 		{
 			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (ParseException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
 		}
 		finally
 		{
 			try
 			{
-				if (json.length () == 0)
+				if (!json.has ("result"))
 				{
-					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
+					json.put ("result", "FAIL. " + error);
 				}
 			}
 			catch (Exception e)
@@ -1004,221 +758,182 @@ public class MobileService
 		}
 		return json.toString ();
 	}
-
-	public String getPatientReport (String formType, JSONObject values)
+	
+	/*
+	 * TEMPORARY. Remove after all MS Access data has been uploaded
+	 */
+	 private String doDataUpload() {
+	  return new AccessUpload().upload();
+	 }
+	
+	 /**
+	 * Save user's Feedback form into separate database
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String doFeedback (String formType, JSONObject values)
 	{
 		JSONObject json = new JSONObject ();
 		try
 		{
-			List<Patient> patients = new ArrayList<Patient> ();
-			String id = values.getString ("id");
-			
-			if (!id.equals (""))
+			String location = values.getString ("location").toUpperCase ();
+			String feedbackType = values.getString ("feedback_type").toUpperCase ();
+			String feedbackText = values.getString ("feedback").toUpperCase ();
+			String userName = values.getString ("username").toUpperCase ();
+			StringBuffer query = new StringBuffer ();
+			query.append ("insert into openmrs_rpt.feedback (sender_id,feedback_type,feedback,date_reported,feedback_status) values (?, ?, ?, ?, ?)");
+			String[] params = {userName, feedbackType, feedbackText.replace ("'", "") + ". Location " + location, DateTimeUtil.getSQLDate (new Date ()), "PENDING"};
+			if (executeUpdate (query.toString (), params))
 			{
-				patients = Context.getPatientService ().getPatients (id);
-				if (patients != null)
-				{
-					Patient p = patients.get (0);
-					json.put ("first_name", p.getPersonName ().getGivenName ());
-					json.put ("last_name", p.getPersonName ().getFamilyName ());
-					json.put ("gender", p.getGender ());
-					json.put ("age", p.getAge ());
-					json.put ("dob", p.getBirthdate ().toString ());
-					if (p.getPersonAddress ().getAddress1 () != null)
-						json.put ("address", p.getPersonAddress ().getAddress1 ());
-					else
-						json.put ("address", "");
-					if (p.getPersonAddress ().getAddress2 () != null)
-						json.put ("colony", p.getPersonAddress ().getAddress2 ());
-					else
-						json.put ("colony", "");
-					if (p.getPersonAddress ().getAddress3 () != null)
-						json.put ("town", p.getPersonAddress ().getAddress3 ());
-					else
-						json.put ("town", "");
-					if (p.getPersonAddress ().getAddress4 () != null)
-						json.put ("landmark", p.getPersonAddress ().getAddress4 ());
-					else
-						json.put ("landmark", "");
-					if (p.getPersonAddress ().getCityVillage () != null)
-						json.put ("city", p.getPersonAddress ().getCityVillage ());
-					else
-						json.put ("city", "");
-					if (p.getPersonAddress ().getCountry () != null)
-						json.put ("country", p.getPersonAddress ().getCountry ());
-					else
-						json.put ("country", "");
-					json.put ("pid", p.getPatientIdentifier ());
-					PersonAttribute pa = p.getAttribute ("Primary Phone");
-					if (pa != null)
-						json.put ("phone1", pa.getValue ());
-					else
-						json.put ("phone1", "");
-					
-					pa = p.getAttribute ("Secondary Phone");
-					if (pa != null)
-						json.put ("phone2", pa.getValue ());
-					else
-						json.put ("phone2", "");
-
-					Concept contactTbConcept = Context.getConceptService ().getConceptByName ("Contact with TB");
-					List<Obs> contactTbObs = new LinkedList<Obs> ();
-					contactTbObs = Context.getObsService ().getObservationsByPersonAndConcept (p, contactTbConcept);
-					if (contactTbObs != null)
-					{
-						
-						int size = contactTbObs.size ();
-						if(size != 0){
-							Obs contactTbO = contactTbObs.get (0);
-							String contactTbValue = contactTbO.getValueCoded ().getName ().getName ();
-							json.put ("contact_tb", contactTbValue);
-						}
-						else
-							json.put ("contact_tb", "");
-					}
-					else
-						json.put ("contact_tb", "");
-
-					Concept diabetesConcept = Context.getConceptService ().getConceptByName ("Diabetes");
-					List<Obs> diabetesObs = new LinkedList<Obs> ();
-					diabetesObs = Context.getObsService ().getObservationsByPersonAndConcept (p, diabetesConcept);
-					if (diabetesObs != null)
-					{
-						int size = diabetesObs.size ();
-						if(size != 0){
-							Obs diabetesO = diabetesObs.get (0);
-							String diabetesValue = diabetesO.getValueCoded ().getName ().getName ();
-							json.put ("diabetes", diabetesValue);
-						}
-						else
-							json.put ("diabetes", "");
-					}
-					else
-						json.put ("diabetes", "");
-
-					Concept labTestIdConcept = Context.getConceptService ().getConceptByName ("Lab Test Id");
-					List<Obs> labTestIdObs = new LinkedList<Obs> ();
-					labTestIdObs = Context.getObsService ().getObservationsByPersonAndConcept (p, labTestIdConcept);
-					
-					if(labTestIdObs != null){
-						int size = labTestIdObs.size ();
-						if (size != 0)
-						{
-							Obs labTestIdO = labTestIdObs.get (0);
-							String labTestIdValue = labTestIdO.getValueText ();
-							if(labTestIdValue != null)
-								json.put ("test_lab_id", labTestIdValue);
-							else
-								json.put ("test_lab_id", "");
-						}
-						else
-							json.put ("test_lab_id", "");
-					}
-					else
-						json.put ("test_lab_id", "");
-					
-					
-					Concept lastHivResultConcept = Context.getConceptService ().getConceptByName ("Last HIV result");
-					List<Obs> lastHivResultObs = new LinkedList<Obs> ();
-					lastHivResultObs = Context.getObsService ().getObservationsByPersonAndConcept (p, lastHivResultConcept);
-					if (lastHivResultObs != null)
-					{
-						
-						int size = lastHivResultObs.size ();
-						if(size != 0){
-							Obs lastHivO = lastHivResultObs.get (0);
-							String lastHivValue = lastHivO.getValueCoded ().getName ().getName ();
-							json.put ("last_hiv", lastHivValue);
-						}
-						else
-							json.put ("last_hiv", "");
-					}
-					else
-						json.put ("last_hiv", "");
-
-					json.put ("date_sputum_submission", "");
-					List<Encounter> sputumSubmissionEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
-					for (Encounter e : sputumSubmissionEncountersByPatient)
-					{
-						if (e.getEncounterType ().getName ().equals ("Sputum Submission"))
-						{
-							json.put ("date_sputum_submission", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
-						}
-					}
-					
-					json.put ("date_sputum_result", "");
-					List<Encounter> sputumResultEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
-					for (Encounter e : sputumResultEncountersByPatient)
-					{
-						if (e.getEncounterType ().getName ().equals ("Sputum Result"))
-						{
-							json.put ("date_sputum_result", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
-						}
-					}
-						
-					
-					json.put ("date_treatment_initiation", "");
-					Concept genexpertResultConcept = Context.getConceptService ().getConceptByName ("GeneXpert Result");
-					List<Obs> genexpertResultObs = new LinkedList<Obs> ();
-					genexpertResultObs = Context.getObsService ().getObservationsByPersonAndConcept (p, genexpertResultConcept);
-					if (genexpertResultObs != null)
-					{
-						
-						int size = genexpertResultObs.size ();
-						if(size != 0){
-							Obs genexpertO = genexpertResultObs.get (0);
-							String genexpertValue = genexpertO.getValueCoded ().getName ().getName ();
-							json.put ("genexpert_result", genexpertValue);
-							
-							if(genexpertValue.equals("MTB Positive")){
-								/*List<Encounter> treatmentInitiationEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
-								for (Encounter e : treatmentInitiationEncountersByPatient)
-								{
-									if (e.getEncounterType ().getName ().equals ("Treatment Initiation"))
-									{
-										json.put ("date_treatment_initiation", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
-									}
-								}*/
-								
-								Concept treatmentInitiationDateConcept = Context.getConceptService ().getConceptByName ("Treatment Initiation Date");
-								List<Obs> treatmentInitiationObs = new LinkedList<Obs> ();
-								treatmentInitiationObs = Context.getObsService ().getObservationsByPersonAndConcept (p, treatmentInitiationDateConcept);
-								if (treatmentInitiationObs != null)
-								{
-									size = treatmentInitiationObs.size ();
-									if(size != 0){
-										Obs treatmentInititionDateO = treatmentInitiationObs.get (0);
-										String value = DateTimeUtil.getSQLDate(treatmentInititionDateO.getValueDate());
-										json.put ("date_treatment_initiation", value);
-									}
-									else
-										json.put ("date_treatment_initiation", "");
-								}
-								else
-									json.put ("date_treatment_initiation", "");
-								
-							}
-						}
-						else
-							json.put ("genexpert_result", "");
-					}
-					else
-						json.put ("genexpert_result", "");
-					
-				}
+				json.put ("result", "SUCCESS");
 			}
 		}
 		catch (JSONException e)
 		{
 			e.printStackTrace ();
 		}
+		return json.toString ();
+	}
+	
+	/**
+	 * Save Forms consisting of Encounters and Observations only
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	@SuppressWarnings("deprecation")
+	public String doGenericForm (String formType, JSONObject values)
+	{
+		JSONObject json = new JSONObject ();
+		String error = "";
+		try
+		{
+			String location = values.getString ("location").toString ();
+			String username = values.getString ("username").toString ();
+			String patientId = values.getString ("patient_id");
+			String encounterType = values.getString ("encounter_type");
+			String formDate = values.getString ("form_date");
+			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
+			String encounterLocation = values.getString ("encounter_location");
+			String provider = values.getString ("provider");
+			
+			String check = checkForPrerequisite(patientId,encounterType);
+			
+			if(!check.equals("")){
+				json.put ("result", check);
+				return json.toString ();
+			}
+				
+			
+			JSONArray obs = new JSONArray (values.getString ("obs"));
+			// Get Creator
+			User creatorObj = Context.getUserService ().getUserByUsername (username);
+			// Get Location
+			Location locationObj = Context.getLocationService ().getLocation (location);
+			// Get Encounter type
+			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
+			// Get Patient object
+			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
+			if (patients.isEmpty ())
+				throw new Exception ();
+			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
+			// Create Encounter
+			Encounter encounter = new Encounter ();
+			encounter.setEncounterType (encounterTypeObj);
+			encounter.setPatient (patient);
+			// In case of Encounter location different than login location
+			if (!encounterLocation.equalsIgnoreCase (location))
+			{
+				locationObj = Context.getLocationService ().getLocation (encounterLocation);
+			}
+			encounter.setLocation (locationObj);
+			encounter.setEncounterDatetime (encounterDatetime);
+			encounter.setCreator (creatorObj);
+			encounter.setDateCreated (new Date ());
+			// Create Observations set
+			for (int i = 0; i < obs.length (); i++)
+			{
+				Obs ob = new Obs ();
+				// Create Person object
+				{
+					Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
+					ob.setPerson (personObj);
+				}
+				// Create question/answer Concept object
+				{
+					JSONObject pair = obs.getJSONObject (i);
+					Concept concept = Context.getConceptService ().getConceptByName (pair.getString ("concept"));
+					ob.setConcept (concept);
+					String hl7Abbreviation = concept.getDatatype ().getHl7Abbreviation ();
+					if (hl7Abbreviation.equals ("NM"))
+					{
+						ob.setValueNumeric (Double.parseDouble (pair.getString ("value")));
+					}
+					else if (hl7Abbreviation.equals ("CWE"))
+					{
+						Concept valueObj = Context.getConceptService ().getConcept (pair.getString ("value"));
+						ob.setValueCoded (valueObj);
+					}
+					else if (hl7Abbreviation.equals ("ST"))
+					{
+						ob.setValueText (pair.getString ("value"));
+					}
+					else if (hl7Abbreviation.equals ("DT"))
+					{
+						ob.setValueDate (DateTimeUtil.getDateFromString (pair.getString ("value"), DateTimeUtil.SQL_DATE));
+					}
+				}
+				ob.setObsDatetime (encounterDatetime);
+				ob.setLocation (locationObj);
+				ob.setCreator (creatorObj);
+				ob.setDateCreated (new Date ());
+				encounter.addObs (ob);
+			}
+			if (creatorObj.getUsername ().equals (provider))
+				encounter.setProvider (creatorObj);
+			Context.getEncounterService ().saveEncounter (encounter);
+			json.put ("result", "SUCCESS");
+		}
+		catch (NonUniqueObjectException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
+		}
+		catch (NullPointerException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (IllegalArgumentException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (ParseException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
+		}
 		finally
 		{
 			try
 			{
-				if (json.length () == 0)
+				if (!json.has ("result"))
 				{
-					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
+					json.put ("result", "FAIL. " + error);
 				}
 			}
 			catch (Exception e)
@@ -1228,7 +943,168 @@ public class MobileService
 		}
 		return json.toString ();
 	}
-
+	
+	/**
+	 * Saves form for HIV Testing (encounter, observation) and patient attributes (contact no)
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String doHIVTesting (String formType, JSONObject values)
+	{
+		JSONObject json = new JSONObject ();
+		String error = "";
+		try
+		{
+			String location = values.getString ("location").toString ();
+			String username = values.getString ("username").toString ();
+			String patientId = values.getString ("patient_id");
+			String encounterType = values.getString ("encounter_type");
+			String formDate = values.getString ("form_date");
+			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
+			String encounterLocation = values.getString ("encounter_location");
+			String provider = values.getString ("provider");
+			
+			JSONArray obs = new JSONArray (values.getString ("obs"));
+			JSONArray attributes = new JSONArray (values.getString ("attributes"));
+			// Get Creator
+			User creatorObj = Context.getUserService ().getUserByUsername (username);
+			// Get Location
+			Location locationObj = Context.getLocationService ().getLocation (location);
+			// Get Encounter type
+			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
+			// Get Patient object
+			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
+			if (patients.isEmpty ())
+				throw new Exception ();
+			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
+			// Create Encounter
+			Encounter encounter = new Encounter ();
+			encounter.setEncounterType (encounterTypeObj);
+			encounter.setPatient (patient);
+			// In case of Encounter location different than login location
+			if (!encounterLocation.equalsIgnoreCase (location))
+			{
+				locationObj = Context.getLocationService ().getLocation (encounterLocation);
+			}
+			encounter.setLocation (locationObj);
+			encounter.setEncounterDatetime (encounterDatetime);
+			encounter.setCreator (creatorObj);
+			encounter.setDateCreated (new Date ());
+			// Create Observations set
+			for (int i = 0; i < obs.length (); i++)
+			{
+				Obs ob = new Obs ();
+				// Create Person object
+				{
+					Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
+					ob.setPerson (personObj);
+				}
+				// Create question/answer Concept object
+				{
+					JSONObject pair = obs.getJSONObject (i);
+					Concept concept = Context.getConceptService ().getConceptByName (pair.getString ("concept"));
+					ob.setConcept (concept);
+					String hl7Abbreviation = concept.getDatatype ().getHl7Abbreviation ();
+					if (hl7Abbreviation.equals ("NM"))
+					{
+						ob.setValueNumeric (Double.parseDouble (pair.getString ("value")));
+					}
+					else if (hl7Abbreviation.equals ("CWE"))
+					{
+						Concept valueObj = Context.getConceptService ().getConcept (pair.getString ("value"));
+						ob.setValueCoded (valueObj);
+					}
+					else if (hl7Abbreviation.equals ("ST"))
+					{
+						ob.setValueText (pair.getString ("value"));
+					}
+					else if (hl7Abbreviation.equals ("DT"))
+					{
+						ob.setValueDate (DateTimeUtil.getDateFromString (pair.getString ("value"), DateTimeUtil.SQL_DATE));
+					}
+				}
+				ob.setObsDatetime (encounterDatetime);
+				ob.setLocation (locationObj);
+				ob.setCreator (creatorObj);
+				ob.setDateCreated (new Date ());
+				encounter.addObs (ob);
+			}
+			if (creatorObj.getUsername ().equals (provider))
+				encounter.setProvider (creatorObj);
+			Context.getEncounterService ().saveEncounter (encounter);
+			
+			Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
+			
+			for (int i = 0; i < attributes.length (); i++)
+			{
+				JSONObject pair = attributes.getJSONObject (i);
+				PersonAttributeType personAttributeType;
+				try
+				{
+					personAttributeType = Context.getPersonService ().getPersonAttributeTypeByName (pair.getString ("attribute"));
+					PersonAttribute attribute = new PersonAttribute ();
+					attribute.setAttributeType (personAttributeType);
+					attribute.setValue (pair.getString ("value"));
+					attribute.setCreator (creatorObj);
+					attribute.setDateCreated (new Date ());
+					personObj.addAttribute (attribute);
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace ();
+				}
+			}
+			Context.getPersonService().savePerson(personObj);
+			json.put ("result", "SUCCESS");
+		}
+		catch (NonUniqueObjectException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
+		}
+		catch (NullPointerException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (IllegalArgumentException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
+		}
+		catch (ParseException e)
+		{
+			e.printStackTrace ();
+			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
+		}
+		finally
+		{
+			try
+			{
+				if (!json.has ("result"))
+				{
+					json.put ("result", "FAIL. " + error);
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+		return json.toString ();
+	}
+	
 	/**
 	 * Save Non-suspects into a separate database
 	 * 
@@ -1277,9 +1153,9 @@ public class MobileService
 		}
 		return json.toString ();
 	}
-
+	
 	/**
-	 * Save Adult, Paediatric, Non Pulmonary or any other Screening form
+	 * Save Screening form - Also Creates person, creates patient, adds address and attributes.
 	 * 
 	 * @param formType
 	 * @param values
@@ -1513,740 +1389,37 @@ public class MobileService
 		return json.toString ();
 	}
 	
-	
-	public String doHIVTesting (String formType, JSONObject values)
-	{
-		JSONObject json = new JSONObject ();
-		String error = "";
-		try
-		{
-			String location = values.getString ("location").toString ();
-			String username = values.getString ("username").toString ();
-			String patientId = values.getString ("patient_id");
-			String encounterType = values.getString ("encounter_type");
-			String formDate = values.getString ("form_date");
-			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
-			String encounterLocation = values.getString ("encounter_location");
-			String provider = values.getString ("provider");
-			
-			JSONArray obs = new JSONArray (values.getString ("obs"));
-			JSONArray attributes = new JSONArray (values.getString ("attributes"));
-			// Get Creator
-			User creatorObj = Context.getUserService ().getUserByUsername (username);
-			// Get Location
-			Location locationObj = Context.getLocationService ().getLocation (location);
-			// Get Encounter type
-			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
-			// Get Patient object
-			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
-			if (patients.isEmpty ())
-				throw new Exception ();
-			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
-			// Create Encounter
-			Encounter encounter = new Encounter ();
-			encounter.setEncounterType (encounterTypeObj);
-			encounter.setPatient (patient);
-			// In case of Encounter location different than login location
-			if (!encounterLocation.equalsIgnoreCase (location))
-			{
-				locationObj = Context.getLocationService ().getLocation (encounterLocation);
-			}
-			encounter.setLocation (locationObj);
-			encounter.setEncounterDatetime (encounterDatetime);
-			encounter.setCreator (creatorObj);
-			encounter.setDateCreated (new Date ());
-			// Create Observations set
-			for (int i = 0; i < obs.length (); i++)
-			{
-				Obs ob = new Obs ();
-				// Create Person object
-				{
-					Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
-					ob.setPerson (personObj);
-				}
-				// Create question/answer Concept object
-				{
-					JSONObject pair = obs.getJSONObject (i);
-					Concept concept = Context.getConceptService ().getConceptByName (pair.getString ("concept"));
-					ob.setConcept (concept);
-					String hl7Abbreviation = concept.getDatatype ().getHl7Abbreviation ();
-					if (hl7Abbreviation.equals ("NM"))
-					{
-						ob.setValueNumeric (Double.parseDouble (pair.getString ("value")));
-					}
-					else if (hl7Abbreviation.equals ("CWE"))
-					{
-						Concept valueObj = Context.getConceptService ().getConcept (pair.getString ("value"));
-						ob.setValueCoded (valueObj);
-					}
-					else if (hl7Abbreviation.equals ("ST"))
-					{
-						ob.setValueText (pair.getString ("value"));
-					}
-					else if (hl7Abbreviation.equals ("DT"))
-					{
-						ob.setValueDate (DateTimeUtil.getDateFromString (pair.getString ("value"), DateTimeUtil.SQL_DATE));
-					}
-				}
-				ob.setObsDatetime (encounterDatetime);
-				ob.setLocation (locationObj);
-				ob.setCreator (creatorObj);
-				ob.setDateCreated (new Date ());
-				encounter.addObs (ob);
-			}
-			if (creatorObj.getUsername ().equals (provider))
-				encounter.setProvider (creatorObj);
-			Context.getEncounterService ().saveEncounter (encounter);
-			
-			Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
-			
-			for (int i = 0; i < attributes.length (); i++)
-			{
-				JSONObject pair = attributes.getJSONObject (i);
-				PersonAttributeType personAttributeType;
-				try
-				{
-					personAttributeType = Context.getPersonService ().getPersonAttributeTypeByName (pair.getString ("attribute"));
-					PersonAttribute attribute = new PersonAttribute ();
-					attribute.setAttributeType (personAttributeType);
-					attribute.setValue (pair.getString ("value"));
-					attribute.setCreator (creatorObj);
-					attribute.setDateCreated (new Date ());
-					personObj.addAttribute (attribute);
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace ();
-				}
-			}
-			Context.getPersonService().savePerson(personObj);
-			json.put ("result", "SUCCESS");
-		}
-		catch (NonUniqueObjectException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
-		}
-		catch (NullPointerException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (IllegalArgumentException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (ParseException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
-		}
-		finally
-		{
-			try
-			{
-				if (!json.has ("result"))
-				{
-					json.put ("result", "FAIL. " + error);
-				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace ();
-			}
-		}
-		return json.toString ();
-	}
-
 	/**
-	 * Save Client's Contact and Address information. Also creates and Encounter
-	 * without Observations
+	 * Execute native DML query to fetch data
 	 * 
-	 * @param formType
-	 * @param values
+	 * @param query
+	 * @param parameterValues
 	 * @return
 	 */
-	@SuppressWarnings("deprecation")
-	public String doCustomerInfo (String formType, JSONObject values)
+	public boolean execute (String query)
 	{
-		JSONObject json = new JSONObject ();
-		String error = "";
+		boolean result = false;
 		try
 		{
-			String location = values.getString ("location").toString ();
-			String username = values.getString ("username").toString ();
-			String patientId = values.getString ("patient_id");
-			String encounterType = values.getString ("encounter_type");
-			String formDate = values.getString ("form_date");
-			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
-			String encounterLocation = values.getString ("encounter_location");
-			String provider = values.getString ("provider");
-			String address1 = values.getString ("address1");
-			String address2 = values.getString ("address2");
-			String stateProvince = values.getString ("stateProvince");
-			String address4 = values.getString ("address4");
-			String countyDistrict = values.getString ("countyDistrict");
-			String cityVillage = values.getString ("cityVillage");
-			String country = values.getString ("country");
-			
-			JSONArray attributes = new JSONArray (values.getString ("attributes"));
-			// Get Creator
-			User creatorObj = Context.getUserService ().getUserByUsername (username);
-			// Get Location
-			Location locationObj = Context.getLocationService ().getLocation (location);
-			// Get Encounter type
-			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
-			// Get Patient object
-			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
-			if (patients.isEmpty ())
-				throw new Exception ();
-			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
-			// Get Person object
-			Person person = Context.getPersonService ().getPerson (patient.getPersonId ());
-			// Add address details
+			if (conn.isClosed ())
 			{
-				PersonAddress address = new PersonAddress ();
-				address.setAddress1 (address1);
-				address.setAddress2 (address2);
-				address.setCityVillage (cityVillage);
-				address.setCountry (country);
-				address.setStateProvince (stateProvince);
-				address.setAddress4 (address4);
-				address.setCountyDistrict (countyDistrict);
-				address.setCreator (creatorObj);
-				address.setDateCreated (new Date ());
-				person.addAddress (address);
-			}
-			// Add patient attributes
-			for (int i = 0; i < attributes.length (); i++)
-			{
-				JSONObject pair = attributes.getJSONObject (i);
-				PersonAttributeType personAttributeType;
-				try
+				if (!openConnection ())
 				{
-					personAttributeType = Context.getPersonService ().getPersonAttributeTypeByName (pair.getString ("attribute"));
-					PersonAttribute attribute = new PersonAttribute ();
-					attribute.setAttributeType (personAttributeType);
-					attribute.setValue (pair.getString ("value"));
-					attribute.setCreator (creatorObj);
-					attribute.setDateCreated (new Date ());
-					person.addAttribute (attribute);
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace ();
+					return result;
 				}
 			}
-			Context.getPersonService ().savePerson (person);
-			Encounter encounter = new Encounter ();
-			encounter.setEncounterType (encounterTypeObj);
-			encounter.setPatient (patient);
-			// In case of Encounter location different than login location
-			if (!encounterLocation.equalsIgnoreCase (location))
-			{
-				locationObj = Context.getLocationService ().getLocation (encounterLocation);
-			}
-			encounter.setLocation (locationObj);
-			encounter.setEncounterDatetime (encounterDatetime);
-			encounter.setCreator (creatorObj);
-			encounter.setDateCreated (new Date ());
-			if (creatorObj.getUsername ().equals (provider))
-				encounter.setProvider (creatorObj);
-			// Save encounter without observations
-			Context.getEncounterService ().saveEncounter (encounter);
-			json.put ("result", "SUCCESS");
+			Statement statement = conn.createStatement ();
+			result = statement.execute (query);
+			statement.close ();
 		}
-		catch (NonUniqueObjectException e)
+		catch (SQLException e)
 		{
 			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
+			return false;
 		}
-		catch (NullPointerException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (IllegalArgumentException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (ParseException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
-		}
-		finally
-		{
-			try
-			{
-				if (!json.has ("result"))
-				{
-					json.put ("result", "FAIL. " + error);
-				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace ();
-			}
-		}
-		return json.toString ();
-	}
-
-	/**
-	 * Save Forms consisting of Encounters and Observations only
-	 * 
-	 * @param formType
-	 * @param values
-	 * @return
-	 */
-	@SuppressWarnings("deprecation")
-	public String doGenericForm (String formType, JSONObject values)
-	{
-		JSONObject json = new JSONObject ();
-		String error = "";
-		try
-		{
-			String location = values.getString ("location").toString ();
-			String username = values.getString ("username").toString ();
-			String patientId = values.getString ("patient_id");
-			String encounterType = values.getString ("encounter_type");
-			String formDate = values.getString ("form_date");
-			Date encounterDatetime = DateTimeUtil.getDateFromString (formDate, DateTimeUtil.SQL_DATE);
-			String encounterLocation = values.getString ("encounter_location");
-			String provider = values.getString ("provider");
-			
-			String check = checkForPrerequisite(patientId,encounterType);
-			
-			if(!check.equals("")){
-				json.put ("result", check);
-				return json.toString ();
-			}
-				
-			
-			JSONArray obs = new JSONArray (values.getString ("obs"));
-			// Get Creator
-			User creatorObj = Context.getUserService ().getUserByUsername (username);
-			// Get Location
-			Location locationObj = Context.getLocationService ().getLocation (location);
-			// Get Encounter type
-			EncounterType encounterTypeObj = Context.getEncounterService ().getEncounterType (encounterType);
-			// Get Patient object
-			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
-			if (patients.isEmpty ())
-				throw new Exception ();
-			Patient patient = Context.getPatientService ().getPatients (patientId).get (0);
-			// Create Encounter
-			Encounter encounter = new Encounter ();
-			encounter.setEncounterType (encounterTypeObj);
-			encounter.setPatient (patient);
-			// In case of Encounter location different than login location
-			if (!encounterLocation.equalsIgnoreCase (location))
-			{
-				locationObj = Context.getLocationService ().getLocation (encounterLocation);
-			}
-			encounter.setLocation (locationObj);
-			encounter.setEncounterDatetime (encounterDatetime);
-			encounter.setCreator (creatorObj);
-			encounter.setDateCreated (new Date ());
-			// Create Observations set
-			for (int i = 0; i < obs.length (); i++)
-			{
-				Obs ob = new Obs ();
-				// Create Person object
-				{
-					Person personObj = Context.getPersonService ().getPerson (patient.getPatientId ());
-					ob.setPerson (personObj);
-				}
-				// Create question/answer Concept object
-				{
-					JSONObject pair = obs.getJSONObject (i);
-					Concept concept = Context.getConceptService ().getConceptByName (pair.getString ("concept"));
-					ob.setConcept (concept);
-					String hl7Abbreviation = concept.getDatatype ().getHl7Abbreviation ();
-					if (hl7Abbreviation.equals ("NM"))
-					{
-						ob.setValueNumeric (Double.parseDouble (pair.getString ("value")));
-					}
-					else if (hl7Abbreviation.equals ("CWE"))
-					{
-						Concept valueObj = Context.getConceptService ().getConcept (pair.getString ("value"));
-						ob.setValueCoded (valueObj);
-					}
-					else if (hl7Abbreviation.equals ("ST"))
-					{
-						ob.setValueText (pair.getString ("value"));
-					}
-					else if (hl7Abbreviation.equals ("DT"))
-					{
-						ob.setValueDate (DateTimeUtil.getDateFromString (pair.getString ("value"), DateTimeUtil.SQL_DATE));
-					}
-				}
-				ob.setObsDatetime (encounterDatetime);
-				ob.setLocation (locationObj);
-				ob.setCreator (creatorObj);
-				ob.setDateCreated (new Date ());
-				encounter.addObs (ob);
-			}
-			if (creatorObj.getUsername ().equals (provider))
-				encounter.setProvider (creatorObj);
-			Context.getEncounterService ().saveEncounter (encounter);
-			json.put ("result", "SUCCESS");
-		}
-		catch (NonUniqueObjectException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.DUPLICATION_ERROR);
-		}
-		catch (NullPointerException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (IllegalArgumentException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.INVALID_DATA_ERROR);
-		}
-		catch (ParseException e)
-		{
-			e.printStackTrace ();
-			error = CustomMessage.getErrorMessage (ErrorType.PARSING_ERROR);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-			error = "PatientID: " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND);
-		}
-		finally
-		{
-			try
-			{
-				if (!json.has ("result"))
-				{
-					json.put ("result", "FAIL. " + error);
-				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace ();
-			}
-		}
-		return json.toString ();
-	}
-
-	
-	public String checkForPrerequisite(String patientId, String encounterType){
-		
-		List<Patient> patients = new ArrayList<Patient> ();
-		patients = Context.getPatientService ().getPatients (patientId);
-		if(patients == null){
-			return CustomMessage.getErrorMessage(ErrorType.PATIENT_NOT_FOUND);
-		}
-		Patient patient = patients.get(0);
-		
-		if(encounterType.equals("Sputum Result")){
-			
-			// Get 'Sputum Result' Encounter Type 
-			Collection<EncounterType> sputumResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
-			// Get all Encounters from encounter type 'Sputum Result' for patient id
-			List<Encounter> sputumResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumResultEncounterType, null, null, null, false);
-			
-			
-			// Get 'Sputum Submission' Encounter Type
-			Collection<EncounterType> sputumSubmissionEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
-			// Get all Encounters from encounter type 'Sputum submission' for patient id
-			List<Encounter> sputumSubmissionEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumSubmissionEncounterType, null, null, null, false);
-			
-			
-			//If no encounter found check if 'Sputum Submission' form is submitted with 'Sputum Sample' as 'Accept' 
-			if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){	
-				
-				// If Null return false - Prerequisite fails
-				if(sputumSubmissionEncounters == null || sputumSubmissionEncounters.size() == 0)
-					return CustomMessage.getErrorMessage(ErrorType.SPUTUM_SUBMISSION_NOT_FOUND);	
-				else{
-					
-					// Get 'Sputum Sample'
-					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Sputum Sample");
-					// Get All observations for encounter type and concept
-					List<Obs> observations = Context.getObsService ().getObservations (null, sputumSubmissionEncounters, concepts, null, null, null, null, null, null, null, null, false);
-					
-					for (Obs obs : observations)
-					{
-						Concept sputumSample = obs.getValueCoded();
-						String ss = sputumSample.getName().toString();
-						if (ss.equals ("Accept"))   // if concept value is 'Accept' - Prerequisite Pass
-						{
-							return "";
-						}
-					}
-					
-					return CustomMessage.getErrorMessage(ErrorType.NO_ACCEPTED_SPUTUM_SUBMISSION_FOUND);  // Prerequisite fails
-				}
-					
-			}
-			else{
-				
-				  
-				if(sputumResultEncounters.size() == sputumSubmissionEncounters.size())  // Prerequisite fails
-					return CustomMessage.getErrorMessage(ErrorType.SPUTUM_SUBMISSION_NOT_FOUND);
-				else {
-					
-					// Get 'Sputum Sample' Concept
-					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Sputum Sample");
-					// Get All observations for encounter type and concept
-					List<Obs> observations = Context.getObsService ().getObservations (null, sputumSubmissionEncounters, concepts, null, null, null, null, null, null, null, null, false);
-					
-					int count = 0; 
-					for (Obs obs : observations)
-					{
-						Concept sputumSample = obs.getValueCoded();
-						String ss = sputumSample.getName().toString();
-						if (ss.equals ("Accept"))   // if concept value is 'Accept'
-						{
-							count++;  // no of 'sputumSample' as accept
-						}
-					}
-					
-					if (count > sputumResultEncounters.size()) //if count is greater than SputumResult encounter size
-						return ""; // Prerequisite Pass
-					else 
-						return CustomMessage.getErrorMessage(ErrorType.NO_ACCEPTED_SPUTUM_SUBMISSION_FOUND); // Prerequisite fails
-				}
-			}
-			
-		}
-		
-		else if (encounterType.equals("Treatment Initiation")){
-			
-			// Get 'Treatment Initiation' Encounter Type 
-			Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
-			// Get all Encounters from encounter type 'Treatment Initiation' for patient id
-			List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
-			
-			// if encounter in null
-			if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0){
-				// Get 'Sputum Result' Encounter Type 
-				Collection<EncounterType> sputumResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
-				// Get all Encounters from encounter type 'Sputum Result' for patient id
-				List<Encounter> sputumResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumResultEncounterType, null, null, null, false);
-				
-				// Get 'Culture Result' Encounter Type 
-				Collection<EncounterType> cultureResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Culture Results");
-				// Get all Encounters from encounter type 'Sputum Result' for patient id
-				List<Encounter> cultureResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, cultureResultEncounterType, null, null, null, false);
-				
-				// if encounter is null
-				if((sputumResultEncounters == null || sputumResultEncounters.size() == 0) && (cultureResultEncounters == null || cultureResultEncounters.size() == 0)){
-					return CustomMessage.getErrorMessage(ErrorType.GENEXPERT_RESULT_NOT_FOUND);   // Prerequisite fails
-				}
-				
-				if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){
-					
-				}
-				else{
-					// Get 'GeneXpert Result' Concept
-					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("GeneXpert Result");
-					// Get All observations for encounter type and concept
-					List<Obs> observations = Context.getObsService ().getObservations (null, sputumResultEncounters, concepts, null, null, null, null, null, null, null, null, false);
-					
-					for (Obs obs : observations)
-					{
-						Concept genexpertResult = obs.getValueCoded();
-						String ss = genexpertResult.getName().toString();
-						if (ss.equals ("MTB Positive")) // if value is MTB Positive
-						{
-							return ""; // Prerequisite Pass
-						}
-					}
-					
-					// if encounter is null
-					if(cultureResultEncounters == null || cultureResultEncounters.size() == 0){
-						
-					}
-					else{
-						// Get 'Culture Result' Concept
-						concepts = Context.getConceptService ().getConceptsByName ("Culture Result");
-						// Get All observations for encounter type and concept
-						observations = Context.getObsService ().getObservations (null, cultureResultEncounters, concepts, null, null, null, null, null, null, null, null, false);
-						
-						for (Obs obs : observations)
-						{
-							Concept cultureResult = obs.getValueCoded();
-							String ss = cultureResult.getName().toString();
-							if (ss.equals ("Culture Positive")) // if value is MTB Positive
-							{
-								return ""; // Prerequisite Pass
-							}
-						}
-					}	
-					
-					return CustomMessage.getErrorMessage(ErrorType.POSITIVE_GENEXPERT_RESULT_NOT_FOUND); // Prerequisite fails
-				}
-			}
-			else{ // if encounter is not null
-				
-				// Get 'Treatment Initiated' Concept
-				List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
-				// Get All observations for encounter type and concept
-				List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
-				
-				for (Obs obs : observations)
-				{
-					Concept treatmentInitiated = obs.getValueCoded();
-					String ss = treatmentInitiated.getName().toString();
-					if (ss.equals ("Yes"))  // if value is Yes
-					{
-						return CustomMessage.getErrorMessage(ErrorType.TREATMENT_ALREADY_INITIATED); // Prerequisite fails
-					}
-				}
-				return ""; // Prerequisite Pass
-
-			}
-			
-		}
-		
-		else if(encounterType.equals("Treatment Followup")){
-			
-			// Get 'Treatment Initiation' Encounter Type 
-			Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
-			// Get all Encounters from encounter type 'Treatment Initiation' for patient id
-			List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
-			
-			// Get 'Treatment Initiated' Concept
-			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
-			// Get All observations for encounter type and concept
-			List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
-			
-			
-			// if encounter is null
-			if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0){
-				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_INITIATION_FORM_NOT_FILLED);  // Prerequisite fails
-			}
-			else{
-				
-				for (Obs obs : observations)
-				{
-					Concept treatmentInitiated = obs.getValueCoded();
-					String ss = treatmentInitiated.getName().toString();  // if value is No
-					if (ss.equals ("Yes"))
-					{
-						return "";  // Prerequisite Pass
-					}
-				}
-				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_NOT_INITIATED);  // Prerequisite Fail
-				
-			}
-			
-		}
-		
-		else if(encounterType.equals("Treatment Outcome")){
-			
-			// Get 'Treatment Outcome' Encounter Type 
-			Collection<EncounterType> treatmentOuctomeEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Outcome");
-			// Get all Encounters from encounter type 'Treatment Outcome' for patient id
-			List<Encounter> treatmentOutcomeEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentOuctomeEncounterType, null, null, null, false);
-			
-			
-			// if encounter is null
-			if(treatmentOutcomeEncounters == null || treatmentOutcomeEncounters.size() == 0){
-				
-				// Get 'Treatment Initiation' Encounter Type 
-				Collection<EncounterType> treatmentInitiationEncounterType = Context.getEncounterService ().findEncounterTypes ("Treatment Initiation");
-				// Get all Encounters from encounter type 'Treatment Initiation' for patient id
-				List<Encounter> treatmentInitiationEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, treatmentInitiationEncounterType, null, null, null, false);
-				
-				// if encounter is null
-				if(treatmentInitiationEncounters == null || treatmentInitiationEncounters.size() == 0)
-					return CustomMessage.getErrorMessage(ErrorType.TREATMENT_INITIATION_FORM_NOT_FILLED);  // Prerequisite Fail
-				else{
-					
-					// Get 'Treatment Initiated' Concept
-					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Treatment Initiated");
-					// Get All observations for encounter type and concept
-					List<Obs> observations = Context.getObsService ().getObservations (null, treatmentInitiationEncounters, concepts, null, null, null, null, null, null, null, null, false);
-					
-					for (Obs obs : observations)
-					{
-						Concept treatmentInitiated = obs.getValueCoded();
-						String ss = treatmentInitiated.getName().toString();
-						if (ss.equals ("Yes"))
-						{
-							return "";    // Prerequisite true
-						}
-					}
-					return CustomMessage.getErrorMessage(ErrorType.TREATMENT_NOT_INITIATED); 	// Prerequisite Fail				
-				}
-				
-			}
-			else
-				
-				return CustomMessage.getErrorMessage(ErrorType.TREATMENT_OUTCOME_ALREADY_FILLED); // Prerequisite Fail
-			
-		} 
-		
-		return "";
+		return true;
 	}
 	
-	
-	/**
-	 * Save user's Feedback form into separate database
-	 * 
-	 * @param formType
-	 * @param values
-	 * @return
-	 */
-	public String doFeedback (String formType, JSONObject values)
-	{
-		JSONObject json = new JSONObject ();
-		try
-		{
-			String location = values.getString ("location").toUpperCase ();
-			String feedbackType = values.getString ("feedback_type").toUpperCase ();
-			String feedbackText = values.getString ("feedback").toUpperCase ();
-			String userName = values.getString ("username").toUpperCase ();
-			StringBuffer query = new StringBuffer ();
-			query.append ("insert into openmrs_rpt.feedback (sender_id,feedback_type,feedback,date_reported,feedback_status) values (?, ?, ?, ?, ?)");
-			String[] params = {userName, feedbackType, feedbackText.replace ("'", "") + ". Location " + location, DateTimeUtil.getSQLDate (new Date ()), "PENDING"};
-			if (executeUpdate (query.toString (), params))
-			{
-				json.put ("result", "SUCCESS");
-			}
-		}
-		catch (JSONException e)
-		{
-			e.printStackTrace ();
-		}
-		return json.toString ();
-	}
-
 	/**
 	 * Execute native DML query to fetch data
 	 * 
@@ -2338,106 +1511,25 @@ public class MobileService
 		}
 		return result;
 	}
-
+	
 	/**
-	 * Execute native DML query to fetch data
+	 * FOR DASHBOARD:
+	 * Gets all openmrs locations directly from Openmrs Database
 	 * 
-	 * @param query
-	 * @param parameterValues
 	 * @return
 	 */
-	public boolean execute (String query)
-	{
-		boolean result = false;
-		try
-		{
-			if (conn.isClosed ())
-			{
-				if (!openConnection ())
-				{
-					return result;
-				}
-			}
-			Statement statement = conn.createStatement ();
-			result = statement.execute (query);
-			statement.close ();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace ();
-			return false;
-		}
-		return true;
-	}
-
-	public String getIdWithCheckDigit (String idWithoutCheckDigit)
-	{
-		String validChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVYWXZ_";
-		int sum = 0;
-		for (int i = 0; i < idWithoutCheckDigit.length (); i++)
-		{
-			char ch = idWithoutCheckDigit.charAt (idWithoutCheckDigit.length () - i - 1);
-			if (validChars.indexOf (ch) == -1)
-				return "";
-			int digit = (int) ch - 48;
-			int weight;
-			if (i % 2 == 0)
-			{
-				weight = (2 * digit) - (int) (digit / 5) * 9;
-			}
-			else
-			{
-				weight = digit;
-			}
-			sum += weight;
-		}
-		sum = Math.abs (sum) + 10;
-		int checkDigit = (10 - (sum % 10)) % 10;
-		String idWithCheckDigit = idWithoutCheckDigit.concat ("-");
-		return idWithCheckDigit.concat (Integer.toString (checkDigit));
-	}
-	
-	public String getLastImport(){
-		String selectQuery = "SELECT * from openmrs_rpt.metadata where type = 'lastUpdate'";
-	    String[][] data = executeQuery (selectQuery, null);
-	    String value = data[0][1];
-		return value;
-	}
-	
-	public String[][] getUsername(String username){
-		String selectQuery = "SELECT * from openmrs_rpt.data_screener where username = '"+username+"'";
+	public String[][] getAllLocations(){
+		String selectQuery = "select name from openmrs.location";
 	    String[][] data = executeQuery (selectQuery, null);
 		return data;
 	}
 	
-	public boolean saveText(String[] username , String[] messageDetail){
-		// username                                // messageDetail
-		// 0 - username                            // 0 - date
-		// 1 - name                                // 1 - referenceNumber
-		// 2 - location                           // 2 - text
-		// 3 - primaryNumber                      // 3 - addedby
-		// 4 - secondaryNumber                    // 4 - formatteddate
-		
-		String originator = username[3];
-		if(username[3]== null || username[3]=="null"){
-			originator = username[4];
-		}
-		String insertQuery = 
-			"insert into openmrs_rpt.inboundmessages " +
-			"(originator,referenceNumber,recieveDate,message,dateText,username,name,location,primaryNumber,secondaryNumber,addedby) " +
-			"values('"+originator+"', '"+messageDetail[1]+"', '"+messageDetail[0]+" 23:59:59.999',  '"+messageDetail[2]+"', '"+messageDetail[4]+"', '"+username[0]+"', '"+username[1]+"', '"+username[2]+"', '"+username[3]+"', '"+username[4]+"', '"+messageDetail[3]+"');";
-		System.out.println (insertQuery);
-		boolean flag = execute (insertQuery);
-		return flag;	
-	}
-	
-	
-	public String[][] getUsernameList(){
-		String selectQuery = "SELECT username from openmrs_rpt.data_screener";
-	    String[][] data = executeQuery (selectQuery, null);
-		return data;
-	}
-	
+	/**
+	 * FOR DASHBOARD:
+	 * Gets all Messages directly from Openmrs Reporting Database
+	 * 
+	 * @return
+	 */
 	public String[][] getAllMessages(String filter){
 		String selectQuery = "SELECT * from openmrs_rpt.inboundMessages where voided = 0 "+filter+" order by SUBSTRING(recieveDate, 1, 10) desc, username";
 		System.out.println (selectQuery);
@@ -2445,18 +1537,12 @@ public class MobileService
 		return data;
 	}
 	
-	public String[][] getAllLocations(){
-		String selectQuery = "select name from openmrs.location";
-	    String[][] data = executeQuery (selectQuery, null);
-		return data;
-	}
-	
-	public String[][] getAllScreeners(){
-		String selectQuery = "select * from openmrs_rpt.data_screener where username like '0%'";
-	    String[][] data = executeQuery (selectQuery, null);
-		return data;
-	}
-	
+	/**
+	 * FOR DASHBOARD:
+	 * Gets all Screeners Data Count from Openmrs Database
+	 * 
+	 * @return
+	 */
 	public String[][] getAllSceenersData(String dateFilter){
 		String selectQuery = 
 			"select total_screened , suspect, non_suspect, total_sputum_submitted, left_username, left_date " +
@@ -2499,11 +1585,1116 @@ public class MobileService
 		return data;
 	}
 	
-	/*
-	  * TEMPORARY. Remove after all MS Access data has been uploaded
-	  */
-	 private String doDataUpload() {
-	  return new AccessUpload().upload();
-	 }
+	/**
+	 * FOR DASHBOARD:
+	 * Gets all Screeners from Openmrs Reporting Database
+	 * 
+	 * @return
+	 */
+	public String[][] getAllScreeners(){
+		String selectQuery = "select * from openmrs_rpt.data_screener where username like '0%'";
+	    String[][] data = executeQuery (selectQuery, null);
+		return data;
+	}
+	
+	/**
+	 * 
+	 * Gets District Location through name
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getDistrict (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String locationName = values.getString ("location_name");
+			List<Location> locations = Context.getLocationService ().getLocations (locationName);
+			Location location = locations.get (0);
+			int size = locations.size ();
+
+			JSONObject locationObj = new JSONObject ();
+			locationObj.put ("id", location.getLocationId ());
+			locationObj.put ("name", location.getName ());
+
+			locationObj.put ("size", size);
+
+			for (int i = 1; i < size; i++)
+			{
+				location = locations.get (i);
+				locationObj.put ("id" + i, location.getId ());
+				locationObj.put ("name" + i, location.getName ());
+			}
+
+			json = locationObj.toString ();
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	 
+	/**
+	 * 
+	 * Generates Check Digit for the Id and returns the full Id with Check Digit  
+	 * @param idWithoutCheckDigit
+	 * @return
+	 */
+	public String getIdWithCheckDigit (String idWithoutCheckDigit)
+	{
+		String validChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVYWXZ_";
+		int sum = 0;
+		for (int i = 0; i < idWithoutCheckDigit.length (); i++)
+		{
+			char ch = idWithoutCheckDigit.charAt (idWithoutCheckDigit.length () - i - 1);
+			if (validChars.indexOf (ch) == -1)
+				return "";
+			int digit = (int) ch - 48;
+			int weight;
+			if (i % 2 == 0)
+			{
+				weight = (2 * digit) - (int) (digit / 5) * 9;
+			}
+			else
+			{
+				weight = digit;
+			}
+			sum += weight;
+		}
+		sum = Math.abs (sum) + 10;
+		int checkDigit = (10 - (sum % 10)) % 10;
+		String idWithCheckDigit = idWithoutCheckDigit.concat ("-");
+		return idWithCheckDigit.concat (Integer.toString (checkDigit));
+	}
+	
+	/**
+	 * 
+	 * Returns the date of when Last Import of Smstarseel messages was made
+	 * @return
+	 */
+	public String getLastImport(){
+		String selectQuery = "SELECT * from openmrs_rpt.metadata where type = 'lastUpdate'";
+	    String[][] data = executeQuery (selectQuery, null);
+	    String value = data[0][1];
+		return value;
+	}
+	
+	/**
+	 * Returns Location from from Loaction Name  *** same as getDistrict??  **DUPLICATE
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	
+	public String getLocation (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String locationName = values.getString ("location_name");
+			List<Location> locations = Context.getLocationService ().getLocations (locationName);
+			Location location = locations.get (0);
+			JSONObject locationObj = new JSONObject ();
+			locationObj.put ("id", location.getLocationId ());
+			locationObj.put ("name", location.getName ());
+			json = locationObj.toString ();
+
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * Return json with users mapped location and  
+	 * Performance Feedback from last working day.
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	private String getLocationSetupAndPerformanceFeedback (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String username = values.getString ("username");
+			User user = Context.getUserService().getUserByUsername(username);
+			Person person = user.getPerson();
+			PersonAttribute locationAttribute = person.getAttribute(13);
+			String location = "";
+			if(locationAttribute != null)
+				location = locationAttribute.toString();
+			PersonAttribute screeningTypeAttribute = person.getAttribute(14);
+			String screeningType = "";
+			if(screeningTypeAttribute != null)
+				screeningType = screeningTypeAttribute.toString();
+			
+			JSONObject locationObj = new JSONObject ();
+			locationObj.put ("result", "SUCCESS");
+			locationObj.put ("facility", location);
+			locationObj.put ("screener_type", screeningType);
+			
+			// Get screener numbers...
+			String selectQuery = "SELECT * from openmrs_rpt.daily_feedback_message where screener_id = '"+username+"' and sent = '0'";
+		    String[][] data = executeQuery (selectQuery, null);
+		    
+		    if(data.length != 0){ // if any ...
+			    locationObj.put("percentage", data[0][6]);
+			    locationObj.put("total_screened", data[0][4]);
+			    locationObj.put("sputum_submitted", data[0][5]);
+			    locationObj.put("date", data[0][1]);
+			    
+			    String updateQuery = "Update openmrs_rpt.daily_feedback_message" +
+		 				" set sent = '1' " +
+		 				" where screener_id = '"+username+"'" ;
+
+			    execute(updateQuery);  // mark as sent.
+			    
+		    }
+		    else{
+			    locationObj.put("percentage", "");
+			    locationObj.put("total_screened", "");
+			    locationObj.put("sputum_submitted", "");
+			    locationObj.put("date", "");
+		    }
+			 
+			json = locationObj.toString ();
+			
+		}	
+		
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * 
+	 * Returns patient if available.
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getPatient (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String patientId = values.getString ("patient_id");
+			List<Patient> patients = Context.getPatientService ().getPatients (patientId);
+			if (patients == null)
+			{
+				return json;
+			}
+			if (patients.isEmpty ())
+			{
+				return json;
+			}
+			Patient patient = patients.get (0);
+			JSONObject patientObj = new JSONObject ();
+			patientObj.put ("id", patient.getPatientId ());
+			patientObj.put ("name", patient.getPersonName ().getFullName ());
+			json = patientObj.toString ();
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+
+	/**
+	 * Warning! TNT Method, handle with care. Ever heard of SETI? Yeah, it's
+	 * something like that. It searches for details about a Patient
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getPatientDetail (String formType, JSONObject values)
+	{
+		JSONObject json = new JSONObject ();
+		try
+		{
+			List<Patient> patients = new ArrayList<Patient> ();
+			String patientId = values.getString ("patient_id");
+			if (!patientId.equals (""))
+			{
+				patients = Context.getPatientService ().getPatients (patientId);
+				if (patients != null)
+				{
+					Patient p = patients.get (0);
+					json.put ("name", p.getPersonName ().getGivenName () + " " + p.getPersonName ().getFamilyName ());
+					json.put ("gender", p.getGender ());
+					json.put ("age", p.getAge ());
+					List<Encounter> encountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
+					JSONArray encountersArray = new JSONArray ();
+					for (Encounter e : encountersByPatient)
+					{
+						JSONObject jsonObj = new JSONObject ();
+						jsonObj.put ("encounter", e.getEncounterType ().getName ());
+						jsonObj.put ("date", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
+						encountersArray.put (jsonObj);
+					}
+					if (encountersArray.length () != 0)
+					{
+						json.put ("encounters", encountersArray.toString ());
+					}
+				}
+			}
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (json.length () == 0)
+				{
+					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+		return json.toString ();
+	}
+	
+	/**
+	 * 
+	 * Finds and returns patient id for with the given Test Id used for Sputum Submission
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	private String getPatientIdFromTestId (String formType, JSONObject values)
+	{
+
+		String json = null;
+		try
+		{
+			String id = values.getString ("test_id");
+			String result = values.getString ("result");
+
+			String patientId = null;
+			Collection<EncounterType> encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
+
+			/*
+			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
+			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
+			 * encounterTypes, 7-Collection<Provider> providers,
+			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
+			 * 10-boolean includeVoided)
+			 */
+
+			// 1 2 3 4 5 6 7 8 9 10
+			List<Encounter> encounters = Context.getEncounterService ().getEncounters (null, null, null, null, null, encounterType, null, null, null, false);
+			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
+			/*
+			 * 1 - whom 2 - encounters, 3 - questions, 4 - answers, 5 -
+			 * personTypes, 6 - locations, 7 - sort, 8 - mostRecentN, 9 -
+			 * obsGroupId, 10 - fromDate, 11 - toDate, 12 - includeVoidedObs
+			 */
+			// 1 2 3 4 5 6 7 8 9 10 11 12
+			List<Obs> observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
+			for (Obs obs : observations)
+			{
+				String testId = obs.getValueText ();
+				if (testId.equals (id))
+				{
+					patientId = obs.getPatient ().getPatientIdentifier ().toString ();
+				}
+			}
+
+			if (patientId != null)
+			{
+
+				if (result.equals ("Y"))
+				{
+					List<Patient> patients = Context.getPatientService ().getPatients (patientId);
+					encounterType = null;
+					encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
+					encounters = null;
+					encounters = Context.getEncounterService ().getEncounters (patients.get (0), null, null, null, null, encounterType, null, null, null, false);
+					concepts = null;
+					if (encounters.size () != 0)
+					{
+						concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
+						observations = null;
+						observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
+						if (observations != null)
+						{
+							for (Obs obs : observations)
+							{
+								String testId = obs.getValueText ();
+								if (testId.equals (id))
+								{
+									return json;
+								}
+							}
+						}
+					}
+				}
+
+				JSONObject jsonObj = new JSONObject ();
+				jsonObj.put ("pid", patientId);
+				json = jsonObj.toString ();
+			}
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * 
+	 * Get Patient Name for given Patient Id
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	private String getPatientName (String formType, JSONObject values)
+	{
+		JSONObject json = new JSONObject ();
+		try
+		{
+			List<Patient> patients = new ArrayList<Patient> ();
+			String patientId = values.getString ("patient_id");
+			if (!patientId.equals (""))
+			{
+				patients = Context.getPatientService ().getPatients (patientId);
+				if (patients != null)
+				{
+					Patient p = patients.get (0);
+					json.put ("first_name", p.getPersonName ().getGivenName ());
+					json.put ("last_name", p.getPersonName ().getFamilyName ());
+				}
+			}
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (json.length () == 0)
+				{
+					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+		return json.toString ();
+	}
+
+	/**
+	 * 
+	 * Get Patient Name through Test Id submitted for Sputum Sumission form
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	private String getPatientNameFromTestId (String formType, JSONObject values){
+		
+		JSONObject json = new JSONObject ();
+		try
+		{
+			String id = values.getString ("test_id");
+			String result = values.getString ("result");
+			List<Patient> patients = new ArrayList<Patient> ();
+
+			String patientId = null;
+			Collection<EncounterType> encounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
+
+			/*
+			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
+			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
+			 * encounterTypes, 7-Collection<Provider> providers,
+			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
+			 * 10-boolean includeVoided)
+			 */
+
+			// 1 2 3 4 5 6 7 8 9 10
+			List<Encounter> encounters = Context.getEncounterService ().getEncounters (null, null, null, null, null, encounterType, null, null, null, false);
+			List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Lab Test Id");
+			/*
+			 * 1 - whom 2 - encounters, 3 - questions, 4 - answers, 5 -
+			 * personTypes, 6 - locations, 7 - sort, 8 - mostRecentN, 9 -
+			 * obsGroupId, 10 - fromDate, 11 - toDate, 12 - includeVoidedObs
+			 */
+			// 1 2 3 4 5 6 7 8 9 10 11 12
+			List<Obs> observations = Context.getObsService ().getObservations (null, encounters, concepts, null, null, null, null, null, null, null, null, false);
+			for (Obs obs : observations)
+			{
+				String testId = obs.getValueText ();
+				if (testId.equals (id))
+				{
+					patientId = obs.getPatient ().getPatientIdentifier ().toString ();
+				}
+			}
+			
+			if(patientId!=null){
+				
+				patients = Context.getPatientService ().getPatients (patientId);
+				if (patients != null)
+				{
+					Patient p = patients.get (0);
+					json.put ("first_name", p.getPersonName ().getGivenName ());
+					json.put ("last_name", p.getPersonName ().getFamilyName ());
+				}
+				
+			}
+			
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json.toString ();
+		
+	}
+	
+	/**
+	 * 
+	 * Returns patient attributes and some observations 
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	
+	public String getPatientReport (String formType, JSONObject values)
+	{
+		JSONObject json = new JSONObject ();
+		try
+		{
+			List<Patient> patients = new ArrayList<Patient> ();
+			String id = values.getString ("id");
+			
+			if (!id.equals (""))
+			{
+				patients = Context.getPatientService ().getPatients (id);
+				if (patients != null)
+				{
+					Patient p = patients.get (0);
+					json.put ("first_name", p.getPersonName ().getGivenName ());
+					json.put ("last_name", p.getPersonName ().getFamilyName ());
+					json.put ("gender", p.getGender ());
+					json.put ("age", p.getAge ());
+					json.put ("dob", p.getBirthdate ().toString ());
+					if (p.getPersonAddress ().getAddress1 () != null)
+						json.put ("address", p.getPersonAddress ().getAddress1 ());
+					else
+						json.put ("address", "");
+					if (p.getPersonAddress ().getAddress2 () != null)
+						json.put ("colony", p.getPersonAddress ().getAddress2 ());
+					else
+						json.put ("colony", "");
+					if (p.getPersonAddress ().getAddress3 () != null)
+						json.put ("town", p.getPersonAddress ().getAddress3 ());
+					else
+						json.put ("town", "");
+					if (p.getPersonAddress ().getAddress4 () != null)
+						json.put ("landmark", p.getPersonAddress ().getAddress4 ());
+					else
+						json.put ("landmark", "");
+					if (p.getPersonAddress ().getCityVillage () != null)
+						json.put ("city", p.getPersonAddress ().getCityVillage ());
+					else
+						json.put ("city", "");
+					if (p.getPersonAddress ().getCountry () != null)
+						json.put ("country", p.getPersonAddress ().getCountry ());
+					else
+						json.put ("country", "");
+					json.put ("pid", p.getPatientIdentifier ());
+					PersonAttribute pa = p.getAttribute ("Primary Phone");
+					if (pa != null)
+						json.put ("phone1", pa.getValue ());
+					else
+						json.put ("phone1", "");
+					
+					pa = p.getAttribute ("Secondary Phone");
+					if (pa != null)
+						json.put ("phone2", pa.getValue ());
+					else
+						json.put ("phone2", "");
+
+					Concept contactTbConcept = Context.getConceptService ().getConceptByName ("Contact with TB");
+					List<Obs> contactTbObs = new LinkedList<Obs> ();
+					contactTbObs = Context.getObsService ().getObservationsByPersonAndConcept (p, contactTbConcept);
+					if (contactTbObs != null)
+					{
+						
+						int size = contactTbObs.size ();
+						if(size != 0){
+							Obs contactTbO = contactTbObs.get (0);
+							String contactTbValue = contactTbO.getValueCoded ().getName ().getName ();
+							json.put ("contact_tb", contactTbValue);
+						}
+						else
+							json.put ("contact_tb", "");
+					}
+					else
+						json.put ("contact_tb", "");
+
+					Concept diabetesConcept = Context.getConceptService ().getConceptByName ("Diabetes");
+					List<Obs> diabetesObs = new LinkedList<Obs> ();
+					diabetesObs = Context.getObsService ().getObservationsByPersonAndConcept (p, diabetesConcept);
+					if (diabetesObs != null)
+					{
+						int size = diabetesObs.size ();
+						if(size != 0){
+							Obs diabetesO = diabetesObs.get (0);
+							String diabetesValue = diabetesO.getValueCoded ().getName ().getName ();
+							json.put ("diabetes", diabetesValue);
+						}
+						else
+							json.put ("diabetes", "");
+					}
+					else
+						json.put ("diabetes", "");
+
+					Concept labTestIdConcept = Context.getConceptService ().getConceptByName ("Lab Test Id");
+					List<Obs> labTestIdObs = new LinkedList<Obs> ();
+					labTestIdObs = Context.getObsService ().getObservationsByPersonAndConcept (p, labTestIdConcept);
+					
+					if(labTestIdObs != null){
+						int size = labTestIdObs.size ();
+						if (size != 0)
+						{
+							Obs labTestIdO = labTestIdObs.get (0);
+							String labTestIdValue = labTestIdO.getValueText ();
+							if(labTestIdValue != null)
+								json.put ("test_lab_id", labTestIdValue);
+							else
+								json.put ("test_lab_id", "");
+						}
+						else
+							json.put ("test_lab_id", "");
+					}
+					else
+						json.put ("test_lab_id", "");
+					
+					
+					Concept lastHivResultConcept = Context.getConceptService ().getConceptByName ("Last HIV result");
+					List<Obs> lastHivResultObs = new LinkedList<Obs> ();
+					lastHivResultObs = Context.getObsService ().getObservationsByPersonAndConcept (p, lastHivResultConcept);
+					if (lastHivResultObs != null)
+					{
+						
+						int size = lastHivResultObs.size ();
+						if(size != 0){
+							Obs lastHivO = lastHivResultObs.get (0);
+							String lastHivValue = lastHivO.getValueCoded ().getName ().getName ();
+							json.put ("last_hiv", lastHivValue);
+						}
+						else
+							json.put ("last_hiv", "");
+					}
+					else
+						json.put ("last_hiv", "");
+
+					json.put ("date_sputum_submission", "");
+					List<Encounter> sputumSubmissionEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
+					for (Encounter e : sputumSubmissionEncountersByPatient)
+					{
+						if (e.getEncounterType ().getName ().equals ("Sputum Submission"))
+						{
+							json.put ("date_sputum_submission", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
+						}
+					}
+					
+					json.put ("date_sputum_result", "");
+					List<Encounter> sputumResultEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
+					for (Encounter e : sputumResultEncountersByPatient)
+					{
+						if (e.getEncounterType ().getName ().equals ("Sputum Result"))
+						{
+							json.put ("date_sputum_result", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
+						}
+					}
+						
+					
+					json.put ("date_treatment_initiation", "");
+					Concept genexpertResultConcept = Context.getConceptService ().getConceptByName ("GeneXpert Result");
+					List<Obs> genexpertResultObs = new LinkedList<Obs> ();
+					genexpertResultObs = Context.getObsService ().getObservationsByPersonAndConcept (p, genexpertResultConcept);
+					if (genexpertResultObs != null)
+					{
+						
+						int size = genexpertResultObs.size ();
+						if(size != 0){
+							Obs genexpertO = genexpertResultObs.get (0);
+							String genexpertValue = genexpertO.getValueCoded ().getName ().getName ();
+							json.put ("genexpert_result", genexpertValue);
+							
+							if(genexpertValue.equals("MTB Positive")){
+								/*List<Encounter> treatmentInitiationEncountersByPatient = Context.getEncounterService ().getEncountersByPatient (p);
+								for (Encounter e : treatmentInitiationEncountersByPatient)
+								{
+									if (e.getEncounterType ().getName ().equals ("Treatment Initiation"))
+									{
+										json.put ("date_treatment_initiation", DateTimeUtil.getSQLDate (e.getEncounterDatetime ()));
+									}
+								}*/
+								
+								Concept treatmentInitiationDateConcept = Context.getConceptService ().getConceptByName ("Treatment Initiation Date");
+								List<Obs> treatmentInitiationObs = new LinkedList<Obs> ();
+								treatmentInitiationObs = Context.getObsService ().getObservationsByPersonAndConcept (p, treatmentInitiationDateConcept);
+								if (treatmentInitiationObs != null)
+								{
+									size = treatmentInitiationObs.size ();
+									if(size != 0){
+										Obs treatmentInititionDateO = treatmentInitiationObs.get (0);
+										String value = DateTimeUtil.getSQLDate(treatmentInititionDateO.getValueDate());
+										json.put ("date_treatment_initiation", value);
+									}
+									else
+										json.put ("date_treatment_initiation", "");
+								}
+								else
+									json.put ("date_treatment_initiation", "");
+								
+							}
+						}
+						else
+							json.put ("genexpert_result", "");
+					}
+					else
+						json.put ("genexpert_result", "");
+					
+				}
+			}
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (json.length () == 0)
+				{
+					json.put ("result", "FAIL. " + CustomMessage.getErrorMessage (ErrorType.ITEM_NOT_FOUND));
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+		return json.toString ();
+	}
+	
+	public HttpServletRequest getRequest ()
+	{
+		return request;
+	}
+	
+	/**
+	 * Prepares and returns screening numbers by users
+	 * 
+	 * @param granularity
+	 *            pass day, week or month to get the level of aggregate
+	 * @return
+	 */
+	public String[][] getScreeningData (String granularity)
+	{
+
+		String dateFilter = "year(pt.date_created) = year(curdate()) ";
+		if (granularity.equals ("month"))
+		{
+			dateFilter += "and month(pt.date_created) = month(curdate()) ";
+		}
+		else if (granularity.equals ("week"))
+		{
+			dateFilter += "and month(pt.date_created) = month(curdate()) and week(pt.date_created) = week(curdate()) ";
+		}
+		else if (granularity.equals ("day"))
+		{
+			dateFilter += "and month(pt.date_created) = month(curdate()) and day(pt.date_created) = day(curdate()) ";
+		}
+
+		String selectQuery = "select substring(u.username, 1, 2), u.username, count(pt.patient_id), count(CASE WHEN p_att.value = 'Suspect' then 1 else null end), count(CASE WHEN p_att.value = 'Non-Suspect' then 1 else null end)"
+				+ " from  openmrs.users as u , openmrs.patient as pt , openmrs.person_attribute as p_att"
+				+ " where pt.creator = u.user_id and pt.patient_id = p_att.person_id and p_att.person_attribute_type_id = 12 and " + dateFilter + " group by u.username;";
+
+		String[][] data = executeQuery (selectQuery, null);
+		return data;
+	}
+	
+	/**
+	 * Prepares and returns screening numbers by users for any date
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	
+	private String getScreeningInfo (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String username = values.getString ("username");
+			String date = values.getString ("date");
+			User user = Context.getUserService().getUserByUsername(username);
+			
+			if(user == null){
+				
+				JSONObject locationObj = new JSONObject ();
+				locationObj.put ("result", "FAIL");
+				json = locationObj.toString ();
+				return json;
+			}
+			
+			//"+username+"
+			JSONObject locationObj = new JSONObject ();
+			locationObj.put ("result", "SUCCESS");
+			
+			String selectQuery2 = "select IFNULL(SUM(case when (e.encounter_type = 1) then 1 else 0 end),0) , IFNULL(SUM(case when (e.encounter_type = 2) then 1 else 0 end),0) , IFNULL(SUM(case when ( pa.value = 'Suspect' and e.encounter_type = 1 ) then 1 else 0 end),0) , IFNULL(SUM(case when ( pa.value = 'Non-Suspect' and e.encounter_type = 1 ) then 1 else 0 end),0) " + 
+					"from openmrs.encounter e , openmrs.encounter_provider ep, openmrs.provider p, openmrs.person_attribute pa  " +
+					"where e.encounter_datetime = '"+date+" %' and e.encounter_id = ep.encounter_id and ep.provider_id = p.provider_id and p.identifier = '"+username+"' and ep.voided = 0 and (e.encounter_type = 1 or e.encounter_type = 2) and e.patient_id = pa.person_id and pa.person_attribute_type_id = 12;";
+			String[][] data = executeQuery (selectQuery2, null);
+		    
+		    if(data.length != 0){
+			    locationObj.put("total_screened", data[0][0]);
+			    locationObj.put("total_sputum_submitted", data[0][1]);
+			    locationObj.put("total_suspect", data[0][2]);
+			    locationObj.put("total_non_suspect", data[0][3]);
+			    
+			    if(!data[0][0].equals("0")){
+			    	
+			    	String selectQuery1 = "select concat(pn.given_name, ' ', pn.family_name), pr.gender, DATEDIFF(curdate(), pr.birthdate) / 365.25 as age, pi.identifier , pa.value " +
+							"from openmrs.encounter e , openmrs.encounter_provider ep, openmrs.provider p, openmrs.person_name pn, openmrs.person pr, openmrs.patient_identifier pi , openmrs.person_attribute pa "+
+							"where e.encounter_datetime = '"+date+" %' and e.encounter_id = ep.encounter_id and ep.provider_id = p.provider_id and p.identifier = '"+username+"' and ep.voided = 0 and e.encounter_type = 1 and e.patient_id = pn.person_id and e.patient_id = pr.person_id and e.patient_id = pi.patient_id and pi.identifier_type = 1 and e.patient_id = pa.person_id and pa.person_attribute_type_id = 12;";
+			    	String[][] screeningNames = executeQuery (selectQuery1, null);
+			    	
+			    	for(int i = 0; i<screeningNames.length; i++){
+			    		
+			    		Float f = Float.parseFloat(screeningNames[i][2]);
+			    		int no = f.intValue();
+			    		locationObj.put("name_"+i, screeningNames[i][0]+" - "+screeningNames[i][1]+" - "+no+";:;"+screeningNames[i][3]+";:;"+screeningNames[i][4]);
+			    		
+			    	}
+			    	
+			    }
+			    
+		    }
+		    else{
+			    locationObj.put("result", "FAIL");
+		    }
+			 
+			json = locationObj.toString ();
+			System.out.println(json);
+		}	
+		
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * Returns all Screening Strategies
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getScreeningStrategies (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			Concept screeningStrategyConcept = Context.getConceptService ().getConceptByName ("Screening Strategy");
+			List<ConceptWord> concepts = Context.getConceptService ().getConceptAnswers ("", Context.getLocale (), screeningStrategyConcept);
+			JSONObject conceptObj = new JSONObject ();
+			int size = concepts.size ();
+			conceptObj.put ("size", size);
+			int counter = 0;
+			for (ConceptWord c : concepts)
+			{
+
+				Concept con = c.getConcept ();
+				conceptObj.put ("name" + counter, con.getDescription ());
+				conceptObj.put ("id" + counter, con.getId ());
+				counter++;
+			}
+			json = conceptObj.toString ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * For DASHBOARD :
+	 * Get all Screener numbers from Opernmrs Reporting Database
+	 * 
+	 * @param to
+	 * @param from
+	 * @param username
+	 * @param password
+	 * @return
+	 */
+	public String[][] getSmsData (String to, String from, String username, String password)
+	{
+		String[][] data = null;
+		try
+		{
+			Context.openSession ();
+			Context.authenticate (username, password);
+			String selectQuery = "SELECT Date,Name,Facility,District,originator,recieveDate,text FROM openmrs_rpt.data_screener ,"
+					+ "(SELECT originator, recieveDate, text, DATE_FORMAT(recieveDate, '%y-%m-%d') as Date FROM (Select * from smstarseel.inboundmessage where recieveDate >= '" + from
+					+ "' and recieveDate <= '" + to + " 23:59:59.999' order by recieveDate desc) as temp group by Date, originator order by recieveDate desc) as screening_summary "
+					+ "where data_screener.PhoneNumber = screening_summary.originator order by recieveDate desc;";
+			data = executeQuery (selectQuery, null);
+		}
+		catch(Exception e){
+			
+		}
+		finally
+		{
+			Context.closeSession ();
+		}
+		return data;
+	}
+	
+	/**
+	 * 
+	 * Returns if there is any Pending Sputum Result for patient id.
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	private String getSputumSubmissionStatus (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String pid = values.getString ("p_id");
+			
+			List<Patient> patients = new ArrayList<Patient> ();
+			patients = Context.getPatientService ().getPatients (pid);
+			if(patients == null){
+				return json;
+			}
+			Patient patient = patients.get(0);
+			
+			Collection<EncounterType> sputumResultEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Result");
+			
+			/*
+			 * 1-Patient who, 2-Location loc, 3-Date fromDate, 4-Date toDate,
+			 * 5-Collection<Form> enteredViaForms, 6-Collection<EncounterType>
+			 * encounterTypes, 7-Collection<Provider> providers,
+			 * 8-Collection<VisitType> visitTypes, 9-Collection<Visit> visits,
+			 * 10-boolean includeVoided)
+			 */
+			List<Encounter> sputumResultEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumResultEncounterType, null, null, null, false);
+			
+			if(sputumResultEncounters == null || sputumResultEncounters.size() == 0){
+				
+				Collection<EncounterType> sputumSubmissionEncounterType = Context.getEncounterService ().findEncounterTypes ("Sputum Submission");
+				List<Encounter> sputumSubmissionEncounters = Context.getEncounterService ().getEncounters (patient, null, null, null, null, sputumSubmissionEncounterType, null, null, null, false);
+				
+				if(sputumSubmissionEncounters == null || sputumSubmissionEncounters.size() == 0)
+					return json;	
+				else{
+					
+					List<Concept> concepts = Context.getConceptService ().getConceptsByName ("Sputum Sample");
+					List<Obs> observations = Context.getObsService ().getObservations (null, sputumSubmissionEncounters, concepts, null, null, null, null, null, null, null, null, false);
+					
+					for (Obs obs : observations)
+					{
+						Concept sputumSample = obs.getValueCoded();
+						String ss = sputumSample.getName().toString();
+						if (ss.equals ("Accept"))
+						{
+							JSONObject jsonObj = new JSONObject ();
+							jsonObj.put ("status", "YES");
+							json = jsonObj.toString ();
+							return json;
+						}
+					}
+					
+					JSONObject jsonObj = new JSONObject ();
+					jsonObj.put ("status", "No");
+					json = jsonObj.toString ();
+					return json;
+				}
+					
+			}
+			else{
+				return json;
+			}
+			
+		}	
+		
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+	
+	/**
+	 * Returns Screening Strategy if available.
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getStrategy (String formType, JSONObject values)
+	{
+
+		String json = null;
+		try
+		{	
+			String strategyName = values.getString ("location_name");
+			Concept screeningStrategyConcept = Context.getConceptService ().getConceptByName (strategyName);
+			
+			JSONObject conceptObj = new JSONObject ();
+			
+			if(screeningStrategyConcept == null){
+				conceptObj.put ("status", "FAIL");
+			}
+			else{
+				conceptObj.put ("status", "OK");
+				conceptObj.put ("name", screeningStrategyConcept.getDescription ());
+				conceptObj.put ("id", screeningStrategyConcept.getId ());
+			}
+
+			json = conceptObj.toString ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+
+	/**
+	 * Returns User if exists.
+	 * 
+	 * @param formType
+	 * @param values
+	 * @return
+	 */
+	public String getUser (String formType, JSONObject values)
+	{
+		String json = null;
+		try
+		{
+			String username = values.getString ("username");
+			User user = Context.getUserService ().getUserByUsername (username);
+			Person person = user.getPerson();
+			Collection<Provider> providers = Context.getProviderService().getProvidersByPerson(person);
+			
+			JSONObject userObj = new JSONObject ();
+			
+			if(providers.size() == 0){
+				
+				userObj.put ("ERROR", "MISSING_PROVIDER");
+				
+			}
+			else{
+			
+				userObj.put ("result", "SUCCESS");
+				userObj.put ("id", user.getUserId ());
+				userObj.put ("name", user.getUsername ());
+				userObj.put ("sname", user.getGivenName());
+			
+			}
+			
+			json = userObj.toString ();
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace ();
+		}
+		return json;
+	}
+
+	/**
+	 * For DASHBOARD:
+	 * Return user if exists
+	 * 
+	 * @param username
+	 * @return
+	 */
+	public String[][] getUsername(String username){
+		String selectQuery = "SELECT * from openmrs_rpt.data_screener where username = '"+username+"'";
+	    String[][] data = executeQuery (selectQuery, null);
+		return data;
+	}
+	
+	/**
+	 * For DASHBOARD:
+	 * Get All users from Openmrs Reporting Database
+	 * 
+	 * @return
+	 */
+	public String[][] getUsernameList(){
+		String selectQuery = "SELECT username from openmrs_rpt.data_screener";
+	    String[][] data = executeQuery (selectQuery, null);
+		return data;
+	}
+	
+	/**
+	 * For DASHBOARD:
+	 * Saves Message in Openmrs Reporting Database.
+	 * 
+	 * @param username
+	 * @param messageDetail
+	 * @return
+	 */
+	public boolean saveText(String[] username , String[] messageDetail){
+		// username                                // messageDetail
+		// 0 - username                            // 0 - date
+		// 1 - name                                // 1 - referenceNumber
+		// 2 - location                           // 2 - text
+		// 3 - primaryNumber                      // 3 - addedby
+		// 4 - secondaryNumber                    // 4 - formatteddate
+		
+		String originator = username[3];
+		if(username[3]== null || username[3]=="null"){
+			originator = username[4];
+		}
+		String insertQuery = 
+			"insert into openmrs_rpt.inboundmessages " +
+			"(originator,referenceNumber,recieveDate,message,dateText,username,name,location,primaryNumber,secondaryNumber,addedby) " +
+			"values('"+originator+"', '"+messageDetail[1]+"', '"+messageDetail[0]+" 23:59:59.999',  '"+messageDetail[2]+"', '"+messageDetail[4]+"', '"+username[0]+"', '"+username[1]+"', '"+username[2]+"', '"+username[3]+"', '"+username[4]+"', '"+messageDetail[3]+"');";
+		System.out.println (insertQuery);
+		boolean flag = execute (insertQuery);
+		return flag;	
+	}
+	
 
 }

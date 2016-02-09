@@ -3,10 +3,15 @@
 drop table if exists fact_screening;
 drop table if exists fact_sputumresults;
 drop table if exists fact_treatment;
+
 -- Create fact tables
 create table fact_screening		(fact_id int(11) not null auto_increment, year int(11) default null, month int(11) default null, week int(11) default null, quarter int(11) default null, strategy varchar(45) default null, province varchar(45) default null, district varchar(45) default null, facility varchar(45) default null, screener varchar(45) default null, screened varchar(45) default null, suspects int(11) default null, non_suspects int(11) default null, last_updated datetime default null, primary key (fact_id));
 create table fact_sputumresults	(fact_id int(11) not null auto_increment, year int(11) default null, month int(11) default null, week int(11) default null, quarter int(11) default null, strategy varchar(45) default null, province varchar(45) default null, district varchar(45) default null, facility varchar(45) default null, screener varchar(45) default null, submissions int null, results int null, pending int null, mtb_positives int null, rif_resistants int null, negatives int null, errors int null, rejected int null, no_results int null, last_updated datetime default null,primary key (fact_id));
 create table fact_treatment		(fact_id int(11) not null auto_increment, year int(11) default null, month int(11) default null, week int(11) default null, quarter int(11) default null, strategy varchar(45) default null, province varchar(45) default null, district varchar(45) default null, facility varchar(45) default null, screener varchar(45) default null, tx_initiations int null, drug_sensitive int null, drug_resistant int null, tx_pending int null, followups int null, tx_neg_outcomes int null, tx_other_outcomes int null, last_updated datetime null, primary key (fact_id));
+
+-- Drop, Create Screening Data 
+drop table if exists temp_data;
+create table temp_data select u.username, t.year, t.month, t.week_of_year as week, t.quarter, pa.location as location_id, l.location_name as facility, l.city_village as district, l.state_province as province, s.patient_id, p.identifier as identifier, pta.suspect_status from enc_screening as s inner join dim_user as u on u.username = s.provider inner join person_attribute_merged as pa on pa.person_id = u.person_id inner join dim_patient as p on p.patient_id = s.patient_id inner join dim_location as l on l.location_id = pa.location inner join dim_time as t on t.year = year(s.date_entered) and t.month = month(s.date_entered) and t.week_of_year = week(s.date_entered) left outer join person_attribute_merged as pta on pta.person_id = s.patient_id;
 
 -- Insert Screening facts
 insert into fact_screening

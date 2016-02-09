@@ -21,6 +21,12 @@ Interactive Health Solutions, hereby disclaims all copyright interest in this pr
 
 package com.ihsresearch.tbr4web.server;
 
+/**
+ * 
+ * Servlet to handle requests from Dashboard
+ * 
+ */
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
@@ -45,9 +51,6 @@ import ca.uhn.hl7v2.util.MessageQuery.Result;
 public class DashboardServlet extends HttpServlet
 {
 
-	/**
-	 * 
-	 */
 
 	protected void doPost (HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
@@ -94,6 +97,13 @@ public class DashboardServlet extends HttpServlet
 
 	}
 
+	/**
+	 * 
+	 * Authenticate User and create session
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doLogin (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -145,6 +155,12 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	/**
+	 * 
+	 * Expires the session
+	 * @param request
+	 * @param response
+	 */
 	private void doLogout (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -185,6 +201,13 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	/**
+	 * 
+	 * Import Data from openmrs and SMSTarseel
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doImport (HttpServletRequest request, HttpServletResponse response)
 	{
 		
@@ -214,6 +237,12 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	/**
+	 * Retirn Data for Display
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doView (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -280,6 +309,14 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	
+	/**
+	 * 
+	 * Updates the record accordingly
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doEdit (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -295,7 +332,7 @@ public class DashboardServlet extends HttpServlet
 		   String size = request.getParameter ("size");
 		   String user = request.getParameter ("user");
 		   
-		   if(save != null){
+		   if(save != null){ // if save button is clicked
 			   System.out.println("Saving");
 			   for(int i = 0; i<Integer.valueOf (size); i++){
 				   String selected = request.getParameter ("selected-"+i);
@@ -312,7 +349,7 @@ public class DashboardServlet extends HttpServlet
 				   }
 			   }
 		   }
-		   else if(del != null){
+		   else if(del != null){  // if void button is clicked
 			   System.out.println("Voiding");
 			   for(int i = 0; i<Integer.valueOf (size); i++){
 				   String selected = request.getParameter ("selected-"+i);
@@ -342,6 +379,13 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 
+	/**
+	 * 
+	 * Add a new message
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doAdd (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -392,6 +436,13 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	/**
+	 * 
+	 * Gets Stats for the SMS Data
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doSmsScreeningStatistics (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -482,6 +533,12 @@ public class DashboardServlet extends HttpServlet
 		}
 	}
 	
+	/**
+	 * Gets Stats for the openmrs Data
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void doOpenMrsScreeningStatistics (HttpServletRequest request, HttpServletResponse response)
 	{
 
@@ -563,7 +620,12 @@ public class DashboardServlet extends HttpServlet
 	
 	private void weeklyScreenersReport(){}
 	
-	
+	/**
+	 * Renews the Ticket
+	 * 
+	 * @param request
+	 * @param response
+	 */
 	private void renewCookie(HttpServletRequest request, HttpServletResponse response){
 		
 		Cookie loginCookie = null;
