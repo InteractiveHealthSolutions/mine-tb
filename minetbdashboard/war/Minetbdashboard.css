@@ -1,34 +1,91 @@
-/** Add css rules here for your application. */
+html,
+body {}
 
+.MineTBHeader {
+    font-size: 20px;
+	font-family: Garamond;
+	font-weight: bolder;
+	text-align: center;
+	vertical-align: middle;
+	color: #F58220;
+}
 
-/** Example rules used by the template application (remove for your app) */
-h1 {
-  font-size: 2em;
+.rootPanel{
+	margin: 5px;
+	font-family: Arial, sans-serif, Calibri;
+	background-color: #F0F0E0;
+}
+
+.gwt-Label {
+color: Black;
+float: left;
+font-size: 15px;
+margin: 10px 10px 10px 10px !important;
+}
+
+.gwt-TextBox {
+  padding: 10px !important;
+  border: none !important;
+  border-bottom: solid 2px #c9c9c9 !important;
+  transition: border 0.3s !important;
+  background-color: #F0F0E0 !important;
+  width: 180px !important;
+  font-size: 15px !important;
+}
+
+.gwt-PasswordTextBox {
+  border: none !important;
+  border-bottom: solid 2px #c9c9c9 !important;
+  transition: border 0.3s !important;
+  background-color: #F0F0E0 !important;
+  width: 190px !important;
+  font-size: 15px !important;
+}
+
+.gwt-Button {
+  -webkit-border-radius: 28 !important;
+  -moz-border-radius: 28 !important;
+  border-radius: 28px  !important;
+  border-color: #9bc041 !important;
+  font-family: Courier New !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  background: #9bc041 !important;
+  padding: 5px 20px 5px 20px !important;
+  text-decoration: none !important;
+  margin: 10px 5px 0px 0px !important;
   font-weight: bold;
-  color: #777777;
-  margin: 40px 0px 70px;
-  text-align: center;
+}
+.gwt-Button:hover {
+  background: #ffffff !important;
+  color: #9bc041 !important;
+  border-color: #ffffff !important;
+  text-decoration: none;
 }
 
-.sendButton {
-  display: block;
-  font-size: 16pt;
+.ReportingFlexTable	{
+	
 }
 
-/** Most GWT widgets already have a style name defined */
-.gwt-DialogBox {
-  width: 400px;
+hr { 
+    display: block;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    margin-left: auto;
+    margin-right: auto;
+    border-style: dotted solid dashed;
+    border-width: 1px;
+    color: #F58220;
 }
 
-.dialogVPanel {
-  margin: 5px;
+.gwt-ListBox {
+	-webkit-border-radius: 7px;
+    -moz-border-radius: 7px;
+   	border-radius: 7px;
+   	height: 29px;
+   	width: 150px;
+   	background: url(http://i63.tinypic.com/kao3n6.png) no-repeat 96% center;
+   	-webkit-appearance: none;
+   	border: solid 2px #c9c9c9;	
 }
 
-.serverResponseLabelError {
-  color: red;
-}
-
-/** Set ids using widget.getElement().setId("idOfElement") */
-#closeButton {
-  margin: 15px 6px 6px;
-}

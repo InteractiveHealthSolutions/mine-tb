@@ -33,7 +33,7 @@ import com.ihsinformatics.minetbdashboard.shared.Report;
  * 
  */
 public class ReportUtil {
-	private static final String databaseName = "sz_dw";
+	private static final String databaseName = "minetb_dw";
 	private static String reportsPath;
 	private static String dataPath;
 	public static final char separatorChar = File.separatorChar;

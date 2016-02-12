@@ -23,12 +23,12 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.ValueBoxBase.TextAlignment;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.googlecode.gwt.charts.client.ChartLoader;
@@ -60,18 +60,26 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private static RootPanel rootPanel;
 
 	static VerticalPanel verticalPanel = new VerticalPanel();
+	static VerticalPanel footerPanel = new VerticalPanel();
+
+	private FlexTable footerFlexTable = new FlexTable();
+	private Image irdLogoImage = new Image("\\images\\irdSaLogo.png");
+	private Image aurumLogoImage = new Image("\\images\\aurumLogo.png");
+	
 	private FlexTable headerFlexTable = new FlexTable();
 	private FlexTable loginFlexTable = new FlexTable();
 	private FlexTable optionsTable = new FlexTable();
 	private FlexTable dateFilterTable = new FlexTable();
 
-	private Label formHeadingLabel = new Label("USER AUTHENTICATION");
+	private HTML formHeadingLabel = new HTML("<font size=\"4\"> Welcome to Reporting Dashboard. Please login to proceed. </font> ");
 	private Label userNameLabel = new Label("User ID:");
 	private Label passwordLabel = new Label("Password:");
 
 	private TextBox userTextBox = new TextBox();
 	private PasswordTextBox passwordTextBox = new PasswordTextBox();
 
+	private HTML reportingOptionsLabel = new HTML("<font size=\"4\"> Reporting Options </font> <br> <br> ");
+	
 	private ListBox reportsList = new ListBox();
 	private ListBox locationDimensionList = new ListBox();
 	private ListBox timeDimensionList = new ListBox();
@@ -85,9 +93,6 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private ListBox weekFrom = new ListBox();
 	private ListBox weekTo = new ListBox();
 
-//	private DateBox fromDateBox = new DateBox();
-//	private DateBox toDateBox = new DateBox();
-
 	private Button loginButton = new Button("Login");
 	private Button showButton = new Button("Show Report");
 	private Button clearButton = new Button("Clear");
@@ -95,67 +100,60 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	/* Chart objects */
 	ChartLoader chartLoader;
 	private VerticalPanel chartPanel = new VerticalPanel();
+	
 
 	/**
 	 * This is the entry point method.
 	 */
 	@Override
 	public void onModuleLoad() {
+		
 		rootPanel = RootPanel.get();
 		rootPanel.setStyleName("rootPanel");
-		rootPanel.setSize("1080px", "50%");
-		// verticalPanel.addStyleName("verticalPanel");
 		rootPanel.add(verticalPanel);
+		rootPanel.add(footerPanel);
+				
+		footerPanel.setSize("100%", "100%");
+		footerFlexTable.setWidget(0, 0, irdLogoImage);
+		footerFlexTable.setWidget(0, 1, aurumLogoImage);
+		HTML line = new HTML("<br> <hr  style=\"width:100%;\" />");
+		footerPanel.add(line);
+		footerPanel.add(footerFlexTable);
+		footerPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		footerPanel.setCellHorizontalAlignment(footerFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
+		
+		irdLogoImage.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+            	Window.open("http://www.irdresearch.org/","_blank","enabled");
+            }
+        });
+		
+		aurumLogoImage.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+            	Window.open("http://www.auruminstitute.org/","_blank","enabled");
+            }
+        });
+		
 		headerFlexTable.setWidget(0, 1, formHeadingLabel);
 		headerFlexTable.getRowFormatter().addStyleName(0, "MineTBHeader");
-		headerFlexTable.setSize("100%", "");
-
-		// loginFlexTable.setBorderWidth(2);
-		loginFlexTable.setWidget(1, 0, userNameLabel);
-		userNameLabel.addStyleName("text");
-
-		loginFlexTable.setWidget(1, 1, userTextBox);
-		userTextBox.setAlignment(TextAlignment.JUSTIFY);
-		userTextBox.addStyleName("textbox");
-
-		loginFlexTable.setWidget(2, 0, passwordLabel);
-		passwordLabel.addStyleName("text");
-
-		loginFlexTable.setWidget(2, 1, passwordTextBox);
-		passwordTextBox.setWidth("200");
-		passwordTextBox.addStyleName("textbox");
-		// loginButton.setStyleName("button:active");
-		loginButton.setStyleName("submitButton");
-
-		loginFlexTable.setWidget(3, 1, loginButton);
-		loginButton.setSize("169", "30");
-
-		loginFlexTable.setStyleName("flexTableCell");
-
-		verticalPanel.add(headerFlexTable);
-		verticalPanel.setCellHorizontalAlignment(headerFlexTable,
-				HasHorizontalAlignment.ALIGN_CENTER);
-
-		verticalPanel.add(loginFlexTable);
-		verticalPanel.setSize("1000px", "");
-		verticalPanel
-				.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-		verticalPanel.setCellHorizontalAlignment(loginFlexTable,
-				HasHorizontalAlignment.ALIGN_CENTER);
-		chartPanel.setSize("1024px", "");
-		loginFlexTable.setSize("100%", "");
-		loginFlexTable.getCellFormatter().setHorizontalAlignment(1, 0,
-				HasHorizontalAlignment.ALIGN_RIGHT);
-		loginFlexTable.getCellFormatter().setHorizontalAlignment(2, 0,
-				HasHorizontalAlignment.ALIGN_RIGHT);
-		loginFlexTable.getCellFormatter().setHorizontalAlignment(0, 0,
-				HasHorizontalAlignment.ALIGN_RIGHT);
-		loginFlexTable.getCellFormatter().setVerticalAlignment(1, 1,
-				HasVerticalAlignment.ALIGN_MIDDLE);
-		loginFlexTable.getCellFormatter().setVerticalAlignment(0, 1,
-				HasVerticalAlignment.ALIGN_MIDDLE);
-		verticalPanel.setBorderWidth(1);
 		
+		loginFlexTable.setWidget(1, 0, userNameLabel);
+		loginFlexTable.setWidget(1, 1, userTextBox);
+		loginFlexTable.setWidget(2, 0, passwordLabel);
+		loginFlexTable.setWidget(2, 1, passwordTextBox);
+		loginFlexTable.setWidget(3, 1, loginButton);
+
+		verticalPanel.getElement().setAttribute("align", "center");
+		verticalPanel.add(headerFlexTable);
+		verticalPanel.setCellHorizontalAlignment(headerFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
+		verticalPanel.add(loginFlexTable);
+		verticalPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		verticalPanel.setCellHorizontalAlignment(loginFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
+		
+		chartPanel.setSize("200%", "");
+		reportingOptionsLabel.setStyleName("MineTBHeader");
+		
+		optionsTable.setStyleName("ReportingFlexTable");
 		optionsTable.setWidget(0, 0, new Label("Report:"));
 		optionsTable.setWidget(0, 1, reportsList);
 		optionsTable.setWidget(1, 0, new Label("Reporting Level:"));
@@ -164,8 +162,9 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		optionsTable.setWidget(2, 1, timeDimensionList);
 		optionsTable.setWidget(3, 0, new Label("Select Date Range:"));
 		optionsTable.setWidget(3, 1, dateFilterTable);
-
+		
 		fillLists();
+		
 		loginButton.addClickHandler(this);
 		showButton.addClickHandler(this);
 		clearButton.addClickHandler(this);
@@ -559,6 +558,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			service.setCurrentUser(userName, new AsyncCallback<Void>() {
 				public void onSuccess(Void result) {
 					verticalPanel.clear();
+					verticalPanel.add(reportingOptionsLabel);
 					verticalPanel.add(optionsTable);
 					HorizontalPanel buttonsPanel = new HorizontalPanel();
 					buttonsPanel.add(showButton);
