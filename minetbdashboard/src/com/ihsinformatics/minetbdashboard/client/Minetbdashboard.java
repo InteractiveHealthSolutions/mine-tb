@@ -19,6 +19,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
@@ -48,6 +49,7 @@ import com.ihsinformatics.minetbdashboard.shared.LocationDimension;
 import com.ihsinformatics.minetbdashboard.shared.MineTB;
 import com.ihsinformatics.minetbdashboard.shared.Parameter;
 import com.ihsinformatics.minetbdashboard.shared.TimeDimenstion;
+import com.sun.java.swing.plaf.windows.resources.windows;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -61,10 +63,14 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 
 	static VerticalPanel verticalPanel = new VerticalPanel();
 	static VerticalPanel footerPanel = new VerticalPanel();
+	static VerticalPanel userPanel = new VerticalPanel();
+	static VerticalPanel chartHeaderPanel = new VerticalPanel();
 
 	private FlexTable footerFlexTable = new FlexTable();
 	private Image irdLogoImage = new Image("\\images\\irdSaLogo.png");
 	private Image aurumLogoImage = new Image("\\images\\aurumLogo.png");
+	private Image openmrsLogoImage = new Image("\\images\\openmrsLogo.png");
+	private Image androidLogoImage = new Image("\\images\\androidLogo.png");
 	
 	private FlexTable headerFlexTable = new FlexTable();
 	private FlexTable loginFlexTable = new FlexTable();
@@ -74,6 +80,11 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private HTML formHeadingLabel = new HTML("<font size=\"4\"> Welcome to Reporting Dashboard. Please login to proceed. </font> ");
 	private Label userNameLabel = new Label("User ID:");
 	private Label passwordLabel = new Label("Password:");
+	private Label logoutLabel = new Label("Logout");
+	private Label loggedInLabel = new Label("Logged in as: ");
+	private Label userLoggedInLabel = new Label();
+	
+	private Grid grid = new Grid(1, 2);
 
 	private TextBox userTextBox = new TextBox();
 	private PasswordTextBox passwordTextBox = new PasswordTextBox();
@@ -110,17 +121,58 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		
 		rootPanel = RootPanel.get();
 		rootPanel.setStyleName("rootPanel");
+		rootPanel.add(userPanel);
 		rootPanel.add(verticalPanel);
+		rootPanel.add(chartHeaderPanel);
+		rootPanel.add(chartPanel);
 		rootPanel.add(footerPanel);
+		
+		chartPanel.setVisible(false);
+		userPanel.setVisible(false);
+		footerPanel.setVisible(true);
+		chartHeaderPanel.clear();
+		
+		chartHeaderPanel.setSize("100%", "");
+		verticalPanel.setSize("100%","");
 				
 		footerPanel.setSize("100%", "100%");
-		footerFlexTable.setWidget(0, 0, irdLogoImage);
-		footerFlexTable.setWidget(0, 1, aurumLogoImage);
+		footerFlexTable.setWidget(0, 0, openmrsLogoImage);
+		footerFlexTable.setWidget(0, 1, irdLogoImage);
+		footerFlexTable.setWidget(0, 2, aurumLogoImage);
+		footerFlexTable.setWidget(0, 3, androidLogoImage);
+		
 		HTML line = new HTML("<br> <hr  style=\"width:100%;\" />");
 		footerPanel.add(line);
 		footerPanel.add(footerFlexTable);
 		footerPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		footerPanel.setCellHorizontalAlignment(footerFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
+		
+		userPanel.add(logoutLabel);
+		userPanel.getElement().setAttribute("align", "right");
+		userPanel.add(grid);
+		
+		loggedInLabel.setStyleName("orange-text");
+		userLoggedInLabel.setStyleName("bold-orange-text");
+		
+		userPanel.setCellHorizontalAlignment(logoutLabel,HasHorizontalAlignment.ALIGN_RIGHT);
+		userPanel.setCellHorizontalAlignment(grid,HasHorizontalAlignment.ALIGN_RIGHT);
+		
+		grid.setWidget(0,0, loggedInLabel);
+		grid.setWidget(0, 1, userLoggedInLabel);
+		
+		logoutLabel.setStyleName("logout-button");
+		
+		logoutLabel.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+            	logout();
+            }
+        });
+		
+		openmrsLogoImage.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+            	Window.open("https://105.235.161.203:8443/openmrs","_blank","enabled");
+            }
+        });
 		
 		irdLogoImage.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent event) {
@@ -131,6 +183,12 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		aurumLogoImage.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent event) {
             	Window.open("http://www.auruminstitute.org/","_blank","enabled");
+            }
+        });
+		
+		androidLogoImage.addClickHandler(new ClickHandler() {
+            public void onClick(ClickEvent event) {
+            	Window.open("https://play.google.com/store/apps/details?id=com.ihsinformatics.tbr4mobile&hl=en","_blank","enabled");
             }
         });
 		
@@ -147,10 +205,12 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		verticalPanel.add(headerFlexTable);
 		verticalPanel.setCellHorizontalAlignment(headerFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
 		verticalPanel.add(loginFlexTable);
-		verticalPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		verticalPanel.setCellHorizontalAlignment(loginFlexTable,HasHorizontalAlignment.ALIGN_CENTER);
+		verticalPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		
-		chartPanel.setSize("200%", "");
+		
+		chartPanel.setSize("100%", "100%");
+		chartPanel.getElement().setAttribute("align", "center");
 		reportingOptionsLabel.setStyleName("MineTBHeader");
 		
 		optionsTable.setStyleName("ReportingFlexTable");
@@ -163,6 +223,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		optionsTable.setWidget(3, 0, new Label("Select Date Range:"));
 		optionsTable.setWidget(3, 1, dateFilterTable);
 		
+		reportsList.setWidth("300px");
 		fillLists();
 		
 		loginButton.addClickHandler(this);
@@ -204,12 +265,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 				break;
 			default:
 		}
+		
+		login();
+		
 	}
 
 	@SuppressWarnings("deprecation")
 	public void fillLists() {
-		String[] reports = { "Screening", "Presumptive & High Risk",
-				"Submission", "Pending", "MTB Positive", "RIF Resistant",
+		String[] reports = { "Screening", "Sputum Submission", "GeneXpert: MTB Positive and Rif Resistants", "GeneXpert: MTB Negative and Other Results",
+				"Presumptive & High Risk",
+				"Pending", "RIF Resistant",
 				"Negative", "Error", "Rejected", "No Result",
 				"Sensitive Cases Initiation", "MDR Cases Initiation" };
 		for (String str : reports) {
@@ -243,9 +308,30 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	}
 
 	public void drawChart() {
+		
+		chartHeaderPanel.clear();
+		
+		Label headingLabel = new Label(MineTBClient.get(reportsList)); 
+		chartHeaderPanel.add(headingLabel);
+		
+		headingLabel.setStyleName("ReportHeader");
+		chartHeaderPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		chartHeaderPanel.setCellHorizontalAlignment(headingLabel,HasHorizontalAlignment.ALIGN_CENTER);
+		
+		chartPanel.clear();
+		
 		String report = MineTBClient.get(reportsList);
 		if (report.equals("Screening")) {
 			drawScreening();
+		}
+		else if (report.equals("Sputum Submission")){
+			drawSubmission();
+		}
+		else if (report.equals("GeneXpert: MTB Positive and Rif Resistants")){
+			drawMtbPositive();
+		}
+		else if (report.equals("GeneXpert: MTB Negative and Other Results")){
+			drawMtbNegative();
 		}
 	}
 	
@@ -359,14 +445,18 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		options.setHAxis(HAxis.create(xLabel));
 		options.setVAxis(VAxis.create(yLabel));
 		// Screenings
-		LineChart lineChart = new LineChart();
+		
+		HTML lineBreak = new HTML("<br>");
+		chartPanel.add(lineBreak);
 		HTML line = new HTML("<hr  style=\"width:100%;\" />");
 		// Draw a line break
 		chartPanel.add(line);
+		LineChart lineChart = new LineChart();
 		lineChart.draw(dataTable, options);
 		chartPanel.add(lineChart);
 		// Draw another line break
-		chartPanel.add(line);
+		HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+		chartPanel.add(secondLine);
 	}
 	
 	private void drawScreening() {
@@ -389,7 +479,6 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						@Override
 						public void run() {
 							String title = "Screening by " + location + " per " + time;
-							chartPanel.clear();
 							drawLineChart(result, 2, title, time, "SCREENED");
 							drawLineChart(result, 3, title, time, "PRESUMPTIVE");
 							drawLineChart(result, 4, title, time, "NON-SUSPECTS");
@@ -408,29 +497,128 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		}
 	}
 	
-	public void drawTreatmentInitiationQuery() {
+	private void drawSubmission() {
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(total_submissions) as total, sum(accepted_submissions) as accepted, sum(rejected_submissions) as rejected from fact_sputumresults ");
+		query.append(getFilter(params));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					ChartLoader chartLoader = new ChartLoader(ChartPackage.CORECHART);
+					chartLoader.loadApi(new Runnable() {
+						@Override
+						public void run() {
+							String title = "Submissions by " + location + " per " + time;
+							drawLineChart(result, 2, title, time, "Total Submissions");
+							drawLineChart(result, 3, title, time, "Accepted Submissions");
+							drawLineChart(result, 4, title, time, "Rejected Submissions");
+							load(false);
+						}
+					});
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
-
-	public void drawSputumResultFaultQuery() {
+	
+	private void drawMtbPositive() {
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(total_results) as total, sum(mtb_positives) as positive, sum(rif_resistants) as rif from fact_sputumresults ");
+		query.append(getFilter(params));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					ChartLoader chartLoader = new ChartLoader(ChartPackage.CORECHART);
+					chartLoader.loadApi(new Runnable() {
+						@Override
+						public void run() {
+							String title = "GeneXpert Result by " + location + " per " + time;
+							drawLineChart(result, 2, title, time, "Total GeneXpert Results");
+							drawLineChart(result, 3, title, time, "MTB Postive");
+							drawLineChart(result, 4, title, time, "Rif Resistants");
+							load(false);
+						}
+					});
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
-
-	public void drawNegativeResultQuery() {
+	
+	private void drawMtbNegative() {
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(total_results) as total, sum(mtb_negatives) as negative, sum(unsuccessful) as successful, sum(leaked) as leaked, sum(insufficient_quantity) as insufficient_quantity, sum(incorrect_paperwork) as incorrect_paperwork , sum(rejected) as rejected, sum(errors) as error, sum(invalid) as invalid, sum(no_results) as no_result, sum(others) as other  from fact_sputumresults ");
+		query.append(getFilter(params));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					ChartLoader chartLoader = new ChartLoader(ChartPackage.CORECHART);
+					chartLoader.loadApi(new Runnable() {
+						@Override
+						public void run() {
+							String title = "GeneXpert Result by " + location + " per " + time;
+							drawLineChart(result, 2, title, time, "Total GeneXpert Results");
+							drawLineChart(result, 3, title, time, "MTB Negative");
+							drawLineChart(result, 4, title, time, "Unsuccessful");
+							drawLineChart(result, 5, title, time, "Leaked");
+							drawLineChart(result, 6, title, time, "Insufficient Quantity");
+							drawLineChart(result, 7, title, time, "Incorrect Paperwork");
+							drawLineChart(result, 8, title, time, "Rejected");
+							drawLineChart(result, 9, title, time, "Error");
+							drawLineChart(result, 10, title, time, "Invalid");
+							drawLineChart(result, 11, title, time, "No Result");
+							drawLineChart(result, 12, title, time, "Others");
+							load(false);
+						}
+					});
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
-
-	public void drawRifResistantQuery() {
-	}
-
-	public void drawMtbPositiveQuery() {
-	}
-
-	public void drawSputumPendingQuery() {
-	}
-
-	public void drawSputumSubmissionQuery() {
-	}
-
-	public void drawSuspectQuery() {
-	}
+	
 
 	/**
 	 * Display/Hide main panel and loading widget
@@ -536,7 +724,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	 * otherwise session renewal window will appear
 	 */
 	private void login() {
-		String userName;
+		final String userName;
 		String passCode;
 		String password;
 		String sessionLimit;
@@ -557,14 +745,58 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			setCookies(userName, passCode, password);
 			service.setCurrentUser(userName, new AsyncCallback<Void>() {
 				public void onSuccess(Void result) {
+					
 					verticalPanel.clear();
+					
 					verticalPanel.add(reportingOptionsLabel);
 					verticalPanel.add(optionsTable);
+					
 					HorizontalPanel buttonsPanel = new HorizontalPanel();
 					buttonsPanel.add(showButton);
 					buttonsPanel.add(clearButton);
+					buttonsPanel.setSpacing(5);
 					verticalPanel.add(buttonsPanel);
-					verticalPanel.add(chartPanel);
+					
+					Grid grid = new Grid(1,2);
+					verticalPanel.add(grid);
+					
+					Label lastUpdatedLabel = new Label("Last updated on: ");
+					grid.setWidget(0,0, lastUpdatedLabel);
+					lastUpdatedLabel.setStyleName("orange-text");
+					final Label dateLabel = new Label();
+					grid.setWidget(0,1, dateLabel);
+					dateLabel.setStyleName("bold-orange-text");
+					
+					grid.getElement().setAttribute("align", "right");
+					
+					HTML line = new HTML("<hr  style=\"width:100%;\" /> <br> ");
+					verticalPanel.add(line);
+					
+					chartPanel.setVisible(true);
+					userPanel.setVisible(true);
+					footerPanel.setVisible(false);
+					userLoggedInLabel.setText(userName);
+					
+					String query = "SELECT * FROM minetb_dw.meta_data where tag = 'last_updated';";
+					try {
+						service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+							@Override
+							public void onSuccess(final String[][] result) {
+							
+								dateLabel.setText(result[0][1]);
+								
+							}
+							
+							@Override
+							public void onFailure(Throwable caught) {
+								Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+							}
+						});
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					
 					load(false);
 				}
 
@@ -584,8 +816,8 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	 */
 	public static void logout() {
 		try {
-			flushAll();
 			setCookies("", "", "");
+			Window.Location.reload();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -596,9 +828,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	 */
 	public static void flushAll() {
 		rootPanel.clear();
-		rootPanel
-				.add(new HTML(
-						"Application has been shut down. It is now safe to close the Browser window."));
+		rootPanel.add(new HTML("Application has been shut down. It is now safe to close the Browser window."));
 	}
 
 	@Override
@@ -612,6 +842,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		} else if (sender == clearButton) {
 			load(false);
 			chartPanel.clear();
+			chartHeaderPanel.clear();
 		}
 	}
 

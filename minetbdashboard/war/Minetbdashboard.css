@@ -10,6 +10,16 @@ body {}
 	color: #F58220;
 }
 
+.ReportHeader {
+    font-size: 25px;
+	font-family: Garamond;
+	font-weight: bolder;
+	text-align: center;
+	vertical-align: middle;
+	color: #9bc041;
+}
+
+
 .rootPanel{
 	margin: 5px;
 	font-family: Arial, sans-serif, Calibri;
@@ -87,5 +97,22 @@ hr {
    	background: url(http://i63.tinypic.com/kao3n6.png) no-repeat 96% center;
    	-webkit-appearance: none;
    	border: solid 2px #c9c9c9;	
+}
+
+.logout-button {
+	color: #9bc041;
+}
+
+.logout-button:hover {
+	color: #F58220;
+}
+
+.orange-text {
+	color: #F58220;
+}
+
+.bold-orange-text{
+	color: #F58220;
+	font-weight: bold;
 }
 
