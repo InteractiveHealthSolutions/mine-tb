@@ -232,6 +232,10 @@ public final class DataWarehouseMain {
 		createDimensions();
 		transform();
 		createFacts();
+		
+		String query = "update meta_data set value = now() where tag = 'last_updated';";
+		dwDb.runCommand(CommandType.UPDATE, query.toString());
+		
 		log.info("Finished DW hard reset");
 	}
 
