@@ -221,17 +221,17 @@ public final class DataWarehouseMain {
 	 * Drops and recreates Data warehouse tables to hard reset
 	 */
 	public void resetDataWarehouse() {
-		log.info("Starting DW hard reset");
+		/*log.info("Starting DW hard reset");
 		Object[] tables = dwDb.getColumnData("information_schema.tables",
 				"table_name", "table_schema='" + dwSchema + "'");
 		for (Object t : tables) {
 			log.info("Deleting table " + t);
 			dwDb.deleteTable(t.toString());
-		}
+		}*/
 		extractLoad(true);
-		createDimensions();
-		transform();
-		createFacts();
+		//createDimensions();
+		//transform();
+		//createFacts();
 		
 		String query = "update meta_data set value = now() where tag = 'last_updated';";
 		dwDb.runCommand(CommandType.UPDATE, query.toString());
@@ -242,9 +242,10 @@ public final class DataWarehouseMain {
 	public void extractLoad(boolean fromScratch) {
 		log.info("Starting Extract/Load");
 		// OpenMRS EL
-		openMrs.createSchema(fromScratch);
-		openMrs.extract(dataPath);
-		openMrs.load(dataPath);
+		//openMrs.createSchema(fromScratch);
+		openMrs.extractLoad();
+		//openMrs.extract(dataPath);
+		//openMrs.load(dataPath);
 		log.info("Finished Extract/Load");
 	}
 

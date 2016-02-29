@@ -10,6 +10,10 @@ Interactive Health Solutions, hereby disclaims all copyright interest in this pr
 package com.ihsinformatics.minetb.datawarehouse;
 
 import java.io.File;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -68,6 +72,9 @@ public class OpenMrsProcessor extends AbstractProcessor {
 			" scheduler_task_config_property", " test_order", " user_property",
 			" user_role", " users", " visit", " visit_attribute",
 			" visit_attribute_type", " visit_type" };
+	
+	ArrayList<String> sourceQueries = new ArrayList<String>();
+	ArrayList<String> targetQueries = new ArrayList<String>();
 
 	/**
 	 * Constructor to initialize the object
@@ -392,4 +399,55 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		return true;
 
 	}
+	
+	public boolean extractLoad(){
+		log.info("Importing data from DB into Data Warehouse");
+		
+		getExtractLoadQueries("extract_load.sql");
+
+		openMrsDb.openDBConnection();
+		dwDb.openDBConnection();
+		
+		for (int j = 0; j<sourceQueries.size(); j++) {
+			try {
+				
+				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
+				PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+				ResultSet data = source.executeQuery();
+				ResultSetMetaData metaData = data.getMetaData();
+				while (data.next()) {
+					for (int i = 1; i <= metaData.getColumnCount(); i++) {
+						target.setString(i, data.getString(i));
+					}
+					target.executeUpdate();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		openMrsDb.closeDBConnection();
+		dwDb.closeDBConnection();
+		return true;
+	}
+	
+	
+	public boolean getExtractLoadQueries(String dataPath){
+		
+		FileUtil fileUtil = new FileUtil();
+		String[] queries = fileUtil.getLines("extract_load.sql");
+		
+		for(String query : queries){
+			
+			if (query.toUpperCase().startsWith("SELECT")) {
+				sourceQueries.add(query);
+			} else if (query.toUpperCase().startsWith("INSERT")) {
+				targetQueries.add(query);
+			}
+			
+		}
+		
+		return true;
+	}
+	
 }
