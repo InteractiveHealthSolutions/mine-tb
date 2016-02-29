@@ -28,6 +28,60 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
+	public static Chart createLineChart(String[] timeArray, String xLabel, String yLabel, ArrayList<GraphData> dataList){
+		final Chart chart = new Chart()  
+        .setType(Series.Type.LINE)  
+        .setMarginRight(130)  
+        .setMarginBottom(25)  
+        .setChartTitle(new ChartTitle()  
+            .setText("Monthly Average Temperature")  
+            .setX(-20)  // center  
+        )  
+        .setChartSubtitle(new ChartSubtitle()  
+            .setText("Source: WorldClimate.com")  
+            .setX(-20)  
+        )  
+        .setLegend(new Legend()  
+            .setLayout(Legend.Layout.VERTICAL)  
+            .setAlign(Legend.Align.RIGHT)  
+            .setVerticalAlign(Legend.VerticalAlign.TOP)  
+            .setX(-10)  
+            .setY(100)  
+            .setBorderWidth(0)  
+        )  
+        .setToolTip(new ToolTip()  
+            .setFormatter(new ToolTipFormatter() {  
+                public String format(ToolTipData toolTipData) {  
+                    return "<b>" + toolTipData.getSeriesName() + "</b><br/>" +  
+                        toolTipData.getXAsString() + ": " + toolTipData.getYAsDouble() + "°C";  
+                }  
+            })  
+        );  
+
+    chart.getXAxis()  
+        .setCategories(  
+            timeArray
+        );  
+
+    chart.getXAxis()  
+        .setAxisTitleText(xLabel); 
+    
+    chart.getYAxis()  
+    .setAxisTitleText(yLabel); 
+    
+    for (int i=0; i<dataList.size(); i++) {
+    	
+    	chart.addSeries(chart.createSeries()  
+    	        .setName(dataList.get(i).getTitle())  
+    	        .setPoints(dataList.get(i).getData() 
+    	        )  
+    	    );
+    } 
+
+    return chart;  
+	}
+	
+	
 	public static Chart createStackChartWithLine(String[] timeData, Number[] primaryData , Number[] secondaryData, Number[] lineData, String title, String loc, final String time, String yLabel, final String lineLabel, String primaryTitle, String secondaryTitle) {  
 		  
         final Chart chart = new Chart()  
@@ -166,103 +220,11 @@ public class MoxieChartBuilder {
 	  
 	        return chart;  
 	    }  
-	
-
-	public static Chart createCombinationChart(String[] timeData, Number[] primaryData , Number[] secondaryData, String title, String loc, final String time, final String primaryTitle, String secondaryTitle) {  
-		  
-        final Chart chart = new Chart()
-            .setChartTitleText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + "ly " +title) 
-            .setChartSubtitleText(loc)
-            .setZoomType(BaseChart.ZoomType.X_AND_Y)  
-            .setToolTip(new ToolTip()  
-                .setFormatter(new ToolTipFormatter() {  
-                    public String format(ToolTipData toolTipData) {  
-                        return "<b>" + toolTipData.getXAsString() + " ("+time+")" + "</b><br/>" +
-                        		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble() +  
-                                  (primaryTitle.equals(toolTipData.getSeriesName()) ? "" : " %");  
-                    }  
-                })  
-            )  
-            .setLegend(new Legend()  
-	            .setAlign(Legend.Align.RIGHT)  
-	            .setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
-	            .setFloating(true)  
-	            .setBackgroundColor("#FFFFFF")  
-	            .setBorderColor("#CCC")  
-	            .setBorderWidth(1)  
-	            .setShadow(false)  
-            );  
-  
-        chart.getXAxis()  
-            .setCategories(  
-            		timeData  
-            ).setAxisTitle(new AxisTitle()  
-            .setText(time).setStyle(new Style().setFontSize("16px"))  
-        );  
-  
-        
-        // Primary yAxis  
-        chart.getYAxis(0).setMin(0).setMax(getMaxValue(secondaryData))
-            .setAxisTitle(new AxisTitle()  
-            .setText(secondaryTitle).setStyle(new Style().setFontSize("16px"))  
-            )  
-            .setOpposite(true)  
-            .setLabels(new YAxisLabels()  
-                .setStyle(new Style()  
-                    .setColor("#89A54E")  
-                )  
-                .setFormatter(new AxisLabelsFormatter() {  
-                    public String format(AxisLabelsData axisLabelsData) {  
-                        return axisLabelsData.getValueAsLong() + " %";  
-                    }  
-                })  
-            );  
-  
-        // Secondary yAxis  
-        chart.getYAxis(1).setMax(getMaxValue(primaryData))  
-            .setAxisTitle(new AxisTitle()  
-                .setText(primaryTitle).setStyle(new Style().setFontSize("16px"))  
-            )
-            .setLabels(new YAxisLabels()  
-                .setStyle(new Style()  
-                    .setColor("#A74945")  
-                )  
-                .setFormatter(new AxisLabelsFormatter() {  
-                    public String format(AxisLabelsData axisLabelsData) {  
-                        return axisLabelsData.getValueAsLong() + "";  
-                    }  
-                })  
-            );  
-  
-        chart.addSeries(chart.createSeries()  
-            .setName(primaryTitle)  
-            .setType(Series.Type.COLUMN)  
-            .setPlotOptions(new ColumnPlotOptions()  
-                .setColor("#A74945")
-            ) 
-            .setYAxis(1) 
-            .setPoints(primaryData) 
-        );  
-        chart.addSeries(chart.createSeries()  
-            .setName(secondaryTitle)  
-            .setType(Series.Type.LINE)  
-            .setPlotOptions(new LinePlotOptions()  
-                .setColor("#89A54E")
-            )   
-            .setPoints(secondaryData)
-        );  
-  
-        chart.setExporting(new Exporting().setEnabled(true).setWidth(2000));
-        
-        return chart;  
-    }  
-	
-	public static Chart createCombinationChart_test(String[] xAxisData, final String xLabel, ArrayList<GraphData> dataList, String title, String loc) {  
+		
+	public static Chart createCombinationChart(String[] xAxisData, final String xLabel, String yLabel, ArrayList<GraphData> dataList, String title, String loc) {  
 		 
 		final String primaryTitle = dataList.get(0).getTitle();
 		final Number[] primaryData = dataList.get(0).getData();
-		final String secondaryTitle = dataList.get(1).getTitle();
-		final Number[] secondaryData = dataList.get(1).getData();
 		
         final Chart chart = new Chart()
             .setChartTitleText(xLabel + "ly " +title) 
@@ -323,7 +285,7 @@ public class MoxieChartBuilder {
         // Secondary yAxis  
         chart.getYAxis(0).setMin(0).setMax(getMaxValueFromSecondaryData(dataList))
             .setAxisTitle(new AxisTitle()  
-            .setText(secondaryTitle).setStyle(new Style().setFontSize("16px"))  
+            .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
             )  
             .setOpposite(true)  
             .setLabels(new YAxisLabels()  

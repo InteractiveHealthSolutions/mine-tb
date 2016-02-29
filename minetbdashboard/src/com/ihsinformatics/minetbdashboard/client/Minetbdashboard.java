@@ -298,9 +298,9 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	@SuppressWarnings("deprecation")
 	public void fillLists() {
 		String[] reports = { "Screening", "Sputum Submission", "GeneXpert: MTB Positive and Rif Resistants", "GeneXpert: MTB Negative and Other Results",
-								"Treatment Initiated", "Treatment Not Initiated Reasons",
-								"Followup Smear Results", "Treatment Outcome Results",
-								"Screening Summary", "Sputum Submission Rate", "Treatment Initiation Rate", "drawTest"
+								"Treatment Initiated", "Treatment Not Initiated Reasons", "Followup Smear Results", "Treatment Outcome Results",
+								"Screening Summary", "Sputum Submission Rates", "Treatment Initiation Rates", "Sputum Submission & Error Rates",
+								"DrawTest"
 								};
 		for (String str : reports) {
 			reportsList.addItem(str);
@@ -370,16 +370,19 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		else if (report.equals("Treatment Outcome Results")){
 			drawTreatmentOutcomeResults();
 		}
-		else if (report.equals("Sputum Submission Rate")){
+		else if (report.equals("Sputum Submission Rates")){
 			drawSputumSubmissionRate();
 		}
 		else if (report.equals("Screening Summary")){
 			drawScreeningSummary();
 		}
-		else if (report.equals("Treatment Initiation Rate")){
+		else if (report.equals("Treatment Initiation Rates")){
 			drawTreatmentInitiationRate();
 		}
-		else if (report.equals("drawTest")){
+		else if (report.equals("Sputum Submission & Error Rates")){
+			drawSputumSubmissionAndErrorRate();
+		}
+		else if (report.equals("DrawTest")){
 			drawTest();
 		}
 	}
@@ -866,11 +869,21 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						chartPanel.add(line);
 						
 						String[] timeArray = getTimeArray();
+						String xLabel = Character.toUpperCase(time.charAt(0)) + time.substring(1);
+						String yLabel = "Sputum Submission Rate";
+						
 						Number[] primaryData = getColumnData(result,timeArray,loc,2);
+						GraphData yAxisPrimaryData = new GraphData("Number of Suspects", primaryData);
+						
 						Number[] secondaryData = getColumnData(result,timeArray,loc,3);
+						GraphData yAxisSecondaryData = new GraphData("Sputum Submission Rate", secondaryData);
+						
+						ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+						dataList.add(yAxisPrimaryData);
+						dataList.add(yAxisSecondaryData);
 						
 						// Add Chart
-						chartPanel.add(MoxieChartBuilder.createCombinationChart(timeArray, primaryData, secondaryData, title, loc, time, "Number of Suspects","Sputum Submission Rate"));
+						chartPanel.add(MoxieChartBuilder.createCombinationChart(timeArray, xLabel, yLabel, dataList, title, loc));
 						// Draw another line break
 						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
 						chartPanel.add(secondLine);
@@ -998,7 +1011,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						dataList.add(yAxisSecondaryData);
 														
 						// Add Chart
-						chartPanel.add(MoxieChartBuilder.createCombinationChart_test(timeArray, xLabel, dataList, title, loc));
+						chartPanel.add(MoxieChartBuilder.createCombinationChart(timeArray, xLabel, yAxisSecondaryData.getTitle() ,dataList, title, loc));
 						
 						
 						// Draw another line break
@@ -1022,7 +1035,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		}
 	}
 	
-	private void drawTest(){
+	private void drawSputumSubmissionAndErrorRate(){
 		
 		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
 		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
@@ -1044,7 +1057,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					String[] locations = getUniqueValues(result, 1);
 					for(String loc: locations){
 						
-						String title = "Sputum Submission Rates";
+						String title = "Sputum Submission and Error Rates";
 						
 						HTML lineBreak = new HTML("<br>");
 						chartPanel.add(lineBreak);
@@ -1072,9 +1085,11 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						dataList.add(yAxisSecondaryData);
 						dataList.add(yAxisTertiaryData);
 						dataList.add(yAxisOtherData);
+						
+						String yLabel = "Percentage of Result";
 														
 						// Add Chart
-						chartPanel.add(MoxieChartBuilder.createCombinationChart_test(timeArray, xLabel, dataList, title, loc));
+						chartPanel.add(MoxieChartBuilder.createCombinationChart(timeArray, xLabel, yLabel, dataList, title, loc));
 						
 						// Draw another line break
 						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -1094,6 +1109,59 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void drawTest(){
+		
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(screened) as screened, sum(suspects) as suspects, sum(non_suspects) as non_suspects from fact_screening ");
+		query.append(getFilter(params,""));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					
+					ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+					
+					String[] timeArray = getTimeArray();
+					String xLabel = Character.toUpperCase(time.charAt(0)) + time.substring(1);
+					 
+					
+					String[] locations = getUniqueValues(result, 1);
+					for(String loc: locations){
+						
+						Number[] data = getColumnData(result, timeArray,loc,2);
+						GraphData yAxisData = new GraphData(loc, data);
+						
+						dataList.add(yAxisData);
+						
+					}
+					String yLabel = "Screened";							
+					// Add Chart
+					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList));
+						
+						
+					load(false);
+						
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
 	}
 	
 	public String[][] getDataFor(String locationName, int index, String[][] data){
@@ -1131,15 +1199,15 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	/**
 	 * Set browser cookies
 	 */
-	public static void setCookies(String userName, String passCode,
-			String password) {
+	public static void setCookies(String userName, String passCode, String password) {
 		Cookies.removeCookie("UserName");
 		Cookies.removeCookie("Pass");
 		Cookies.removeCookie("LoginTime");
 		Cookies.removeCookie("SessionLimit");
 
 		MineTB.setCurrentUser(userName);
-		MineTB.setPassCode(password);
+		MineTB.setPassCode(passCode);
+
 		if (!userName.equals(""))
 			Cookies.setCookie("UserName", MineTB.getCurrentUser());
 		if (!password.equals(""))
