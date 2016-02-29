@@ -1,2 +1,0 @@
-serviceClass: com.ihsinformatics.minetbdashboard.client.ServerService
-path: 6D27CB742636D13DAA88EE92F64CCCCE.gwt.rpc
