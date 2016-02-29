@@ -1,5 +1,6 @@
 package com.ihsinformatics.minetbdashboard.client;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 
@@ -38,28 +39,42 @@ import com.googlecode.gwt.charts.client.ChartLoader;
 import com.googlecode.gwt.charts.client.ChartPackage;
 import com.googlecode.gwt.charts.client.ColumnType;
 import com.googlecode.gwt.charts.client.DataTable;
+import com.googlecode.gwt.charts.client.corechart.BarChart;
+import com.googlecode.gwt.charts.client.corechart.BarChartOptions;
 import com.googlecode.gwt.charts.client.corechart.ComboChart;
 import com.googlecode.gwt.charts.client.corechart.ComboChartOptions;
 import com.googlecode.gwt.charts.client.corechart.ComboChartSeries;
 import com.googlecode.gwt.charts.client.corechart.LineChart;
 import com.googlecode.gwt.charts.client.corechart.LineChartOptions;
+import com.googlecode.gwt.charts.client.options.Annotations;
+import com.googlecode.gwt.charts.client.options.AxisTitlesPosition;
 import com.googlecode.gwt.charts.client.options.HAxis;
 import com.googlecode.gwt.charts.client.options.Legend;
 import com.googlecode.gwt.charts.client.options.LegendPosition;
+import com.googlecode.gwt.charts.client.options.SelectionMode;
 import com.googlecode.gwt.charts.client.options.SeriesType;
 import com.googlecode.gwt.charts.client.options.TitlePosition;
+import com.googlecode.gwt.charts.client.options.Trendline;
+import com.googlecode.gwt.charts.client.options.TrendlineType;
 import com.googlecode.gwt.charts.client.options.VAxis;
+import com.googlecode.gwt.charts.client.table.Table;
+import com.googlecode.gwt.charts.client.table.TableOptions;
 import com.googlecode.gwt.charts.client.util.ChartHelper;
 import com.ihsinformatics.minetbdashboard.shared.CollectionsUtil;
 import com.ihsinformatics.minetbdashboard.shared.CustomMessage;
 import com.ihsinformatics.minetbdashboard.shared.DataType;
 import com.ihsinformatics.minetbdashboard.shared.ErrorType;
+import com.ihsinformatics.minetbdashboard.shared.GraphData;
 import com.ihsinformatics.minetbdashboard.shared.InfoType;
 import com.ihsinformatics.minetbdashboard.shared.LocationDimension;
 import com.ihsinformatics.minetbdashboard.shared.MineTB;
 import com.ihsinformatics.minetbdashboard.shared.Parameter;
 import com.ihsinformatics.minetbdashboard.shared.TimeDimenstion;
 import com.sun.java.swing.plaf.windows.resources.windows;
+
+import org.moxieapps.gwt.highcharts.client.*;  
+import org.moxieapps.gwt.highcharts.client.labels.*;  
+import org.moxieapps.gwt.highcharts.client.plotOptions.*;  
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -285,7 +300,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		String[] reports = { "Screening", "Sputum Submission", "GeneXpert: MTB Positive and Rif Resistants", "GeneXpert: MTB Negative and Other Results",
 								"Treatment Initiated", "Treatment Not Initiated Reasons",
 								"Followup Smear Results", "Treatment Outcome Results",
-								"Sputum Submission Rate"
+								"Screening Summary", "Sputum Submission Rate", "Treatment Initiation Rate", "drawTest"
 								};
 		for (String str : reports) {
 			reportsList.addItem(str);
@@ -358,7 +373,15 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		else if (report.equals("Sputum Submission Rate")){
 			drawSputumSubmissionRate();
 		}
-		
+		else if (report.equals("Screening Summary")){
+			drawScreeningSummary();
+		}
+		else if (report.equals("Treatment Initiation Rate")){
+			drawTreatmentInitiationRate();
+		}
+		else if (report.equals("drawTest")){
+			drawTest();
+		}
 	}
 	
 	/**
@@ -473,7 +496,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		options.setBackgroundColor("#f0f0f0");
 		options.setHAxis(HAxis.create(xLabel));
 		options.setVAxis(VAxis.create(yLabel));
-		options.setLegend(Legend.create(LegendPosition.TOP));
+		options.setLegend(Legend.create(LegendPosition.IN));
 		
 		HTML lineBreak = new HTML("<br>");
 		chartPanel.add(lineBreak);
@@ -489,62 +512,10 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		chartPanel.add(secondLine);
 	}
 	
-	private void drawComboChart(String[][] data, String xLabel, String yLabel, String lineBar) {
-		
-	 DataTable dataTable = DataTable.create();
-	 String[] timesStr = getUniqueValues(data, 0);
-	 String[] locations = getUniqueValues(data, 1);
-	 // Add grouping column for time dimension
-	 dataTable.addColumn(ColumnType.STRING, MineTBClient.get(timeDimensionList).toLowerCase());
-	 // Add number of rows equal to unique time dimensions
-	 dataTable.addRows(timesStr.length);
-	 // Add locations as columns
-	 dataTable.addColumn(ColumnType.NUMBER, locations[0]);
-	 // Add Sputum Submission
-	 dataTable.addColumn(ColumnType.NUMBER, lineBar);
-	 
-
-	 for (int i = 0; i < timesStr.length; i++) {
-			dataTable.setValue(i, 0, timesStr[i]);
-	 }
-	 
-	// Convert values into 2D; 1st dimension is locations, 2nd is time
-	for (int col = 0; col < locations.length; col++) {
-		for (int row = 0; row < timesStr.length; row++) {
-			double value = findValueInData(data, locations[col], timesStr[row], 2);
-			dataTable.setValue(row, col + 1, value);
-			value = findValueInData(data, locations[col], timesStr[row], 3);
-			dataTable.setValue(row, col + 2, value);
-		}
-	 }
-
-	 // Set options
-	 ComboChartOptions options = ComboChartOptions.create();
-	 options.setBackgroundColor("#f0f0f0");
-	 options.setHAxis(HAxis.create(xLabel));
-	 options.setVAxis(VAxis.create(yLabel));
-	 options.setSeriesType(SeriesType.BARS);
-	 ComboChartSeries series = ComboChartSeries.create();
-	 series.setType(SeriesType.LINE);
-	 options.setSeries(1, series);
-	 options.setLegend(Legend.create(LegendPosition.TOP));
 	
-	 HTML lineBreak = new HTML("<br>");
-	 chartPanel.add(lineBreak);
-	 HTML line = new HTML("<hr  style=\"width:100%;\" />");
-	 // Draw a line break
-	 chartPanel.add(line);
-	 ComboChart chart = new ComboChart();
-	 // Draw the chart
-	 chart.draw(dataTable, options);
-	 chartPanel.add(chart);
-	 // Draw another line break
-	 HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
-	 chartPanel.add(secondLine);
-	
-	}
 	
 	private void drawScreening() {
+		
 		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
 		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
 		Parameter[] params = null;
@@ -570,7 +541,6 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					});
 				}
-				
 				@Override
 				public void onFailure(Throwable caught) {
 					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
@@ -862,31 +832,258 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
 		Parameter[] params = null;
 		StringBuilder query = new StringBuilder();
-		query.append("select s." + time + ", ");
-		query.append("s." + location + ", ");
-		query.append("sum(suspects) as suspects, sum(accepted_submissions) as submissions from fact_screening f, fact_sputumresults s ");
+		
+		query.append("select screening_data." + time + ", ");
+		query.append(" screening_data." + location + ", ");
+		query.append(" screening_data.suspects, coalesce(((sputum_data.total_submissions/screening_data.suspects)*100),0)  from");
+		query.append(" (select s.year as y, s."+time+", s."+location+", sum(suspects) as suspects from fact_screening s ");
 		query.append(getFilter(params,"s"));
 		query.append(" group by s." + time + ", s." + location);
-		query.append(" order by s." + time + ", s." + location);
+		query.append(" order by s." + time + ", s." + location + ") screening_data");
+		query.append(" join");
+		query.append(" (select s.year as y, s."+time+", s."+location+", sum(total_submissions) as total_submissions from fact_sputumresults s ");
+		query.append(getFilter(params,"s"));
+		query.append(" group by s." + time + ", s." + location);
+		query.append(" order by s." + time + ", s." + location + ") sputum_data");
+		query.append(" on");
+		query.append(" screening_data."+time+" = sputum_data."+time+" and screening_data.y = sputum_data.y and screening_data."+location+" = sputum_data."+location+";");
 		
 		try {
 			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
 				@Override
 				public void onSuccess(final String[][] result) {
-					ChartLoader chartLoader = new ChartLoader(ChartPackage.CORECHART);
-					chartLoader.loadApi(new Runnable() {
-						@Override
-						public void run() {
+					
 							
-							String[] locations = getUniqueValues(result, 1);
-							for(String loc: locations){
-								String[][] locationData = getDataFor(loc, 1, result);
-								drawComboChart(locationData, time, "Number of Suspects" , "Sputum Submissions");
-							}
+					String[] locations = getUniqueValues(result, 1);
+					for(String loc: locations){
+						
+						String title = "Sputum Submission Rates";
+						
+						HTML lineBreak = new HTML("<br>");
+						chartPanel.add(lineBreak);
+						HTML line = new HTML("<hr  style=\"width:100%;\" />");
+						// Draw a line break
+						chartPanel.add(line);
+						
+						String[] timeArray = getTimeArray();
+						Number[] primaryData = getColumnData(result,timeArray,loc,2);
+						Number[] secondaryData = getColumnData(result,timeArray,loc,3);
+						
+						// Add Chart
+						chartPanel.add(MoxieChartBuilder.createCombinationChart(timeArray, primaryData, secondaryData, title, loc, time, "Number of Suspects","Sputum Submission Rate"));
+						// Draw another line break
+						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+						chartPanel.add(secondLine);
+						
+					}
+					
+					load(false);
+						
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void drawScreeningSummary(){
+		
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(screened) as screened, sum(suspects) as suspects, sum(non_suspects) as non_suspects from fact_screening ");
+		query.append(getFilter(params,""));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					
+					String title = "Screening Summary";
+					String[] locations = getUniqueValues(result, 1);
+					for(String loc: locations){
+					
+						HTML lineBreak = new HTML("<br>");
+						chartPanel.add(lineBreak);
+						HTML line = new HTML("<hr  style=\"width:100%;\" />");
+						// Draw a line break
+						chartPanel.add(line);
+						
+						// Draw chart
+						String[] timeArray = getTimeArray();
+						Double[] primaryData = getColumnData(result,timeArray,loc,3);
+						Double[] secondaryData = getColumnData(result,timeArray,loc,4);
+						Double[] cumalativeData = getCumalativeData(result,timeArray,loc,2);
+						chartPanel.add(MoxieChartBuilder.createStackChartWithLine(timeArray, primaryData, secondaryData, cumalativeData, title, loc, time, "Number Screened" , "Cumlative Screened", "Suspect", "Non-Suspect"));
+						
+						// Draw another line break
+						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+						chartPanel.add(secondLine);
+						
+					}
+					load(false);
+						
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void drawTreatmentInitiationRate(){
+		
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		
+		query.append("select sputum_data." + time + ", ");
+		query.append(" sputum_data." + location + ", ");
+		query.append(" sputum_data.mtb_positives, coalesce(((treatment_data.tx_initiated/sputum_data.mtb_positives)*100),0)  from");
+		query.append(" (select s.year as y, s."+time+", s."+location+", sum(mtb_positives) as mtb_positives from fact_sputumresults s ");
+		query.append(getFilter(params,"s"));
+		query.append(" group by s." + time + ", s." + location);
+		query.append(" order by s." + time + ", s." + location + ") sputum_data");
+		query.append(" join");
+		query.append(" (select s.year as y, s."+time+", s."+location+", sum(tx_initiated) as tx_initiated from fact_treatment s ");
+		query.append(getFilter(params,"s"));
+		query.append(" group by s." + time + ", s." + location);
+		query.append(" order by s." + time + ", s." + location + ") treatment_data");
+		query.append(" on");
+		query.append(" treatment_data."+time+" = sputum_data."+time+" and treatment_data.y = sputum_data.y and treatment_data."+location+" = sputum_data."+location+";");
+		
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					
 							
-							load(false);
-						}
-					});
+					String[] locations = getUniqueValues(result, 1);
+					for(String loc: locations){
+						
+						String title = "Treatment Initiation Rates";
+						
+						HTML lineBreak = new HTML("<br>");
+						chartPanel.add(lineBreak);
+						HTML line = new HTML("<hr  style=\"width:100%;\" />");
+						// Draw a line break
+						chartPanel.add(line);
+						
+						String[] timeArray = getTimeArray();
+						String xLabel = Character.toUpperCase(time.charAt(0)) + time.substring(1);
+						
+						Number[] primaryData = getColumnData(result,timeArray,loc,2);
+						GraphData yAxisPrimaryData = new GraphData("Number of MTB Cases", primaryData);
+
+						Number[] secondaryData = getColumnData(result, timeArray,loc,3);
+						GraphData yAxisSecondaryData = new GraphData("Treatment Initiation Rate", secondaryData);
+						
+						ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+						dataList.add(yAxisPrimaryData);
+						dataList.add(yAxisSecondaryData);
+														
+						// Add Chart
+						chartPanel.add(MoxieChartBuilder.createCombinationChart_test(timeArray, xLabel, dataList, title, loc));
+						
+						
+						// Draw another line break
+						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+						chartPanel.add(secondLine);
+						
+					}
+					
+					load(false);
+						
+					
+				}
+				
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void drawTest(){
+		
+		final String location = MineTBClient.get(locationDimensionList).toLowerCase();
+		final String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		Parameter[] params = null;
+		StringBuilder query = new StringBuilder();
+		query.append("select " + time + ", ");
+		query.append(location + ", ");
+		query.append("sum(total_submissions) as total_submissions, sum(leaked) as leaked, sum(no_results) as no_results, (sum(errors)+sum(invalid)+sum(unsuccessful)+sum(insufficient_quantity)+sum(others)+sum(incorrect_paperwork)+sum(rejected)) from fact_sputumresults ");
+		query.append(getFilter(params,""));
+		query.append(" group by " + time + ", " + location);
+		query.append(" order by " + time + ", " + location);
+		
+		try {
+			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+				@Override
+				public void onSuccess(final String[][] result) {
+					
+							
+					String[] locations = getUniqueValues(result, 1);
+					for(String loc: locations){
+						
+						String title = "Sputum Submission Rates";
+						
+						HTML lineBreak = new HTML("<br>");
+						chartPanel.add(lineBreak);
+						HTML line = new HTML("<hr  style=\"width:100%;\" />");
+						// Draw a line break
+						chartPanel.add(line);
+						
+						String[] timeArray = getTimeArray();
+						String xLabel = Character.toUpperCase(time.charAt(0)) + time.substring(1);
+						
+						Number[] primaryData = getColumnData(result,timeArray,loc,2);
+						GraphData yAxisPrimaryData = new GraphData("Sputum Submissions", primaryData);
+
+						Number[] secondaryData = getColumnData(result, timeArray,loc,3);
+						GraphData yAxisSecondaryData = new GraphData("Leaked", secondaryData);
+						
+						Number[] tertiaryData = getColumnData(result, timeArray,loc,4);
+						GraphData yAxisTertiaryData = new GraphData("No Result Found", tertiaryData);
+						
+						Number[] otherData = getColumnData(result, timeArray,loc,5);
+						GraphData yAxisOtherData = new GraphData("All Other Error %", otherData);
+						
+						ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+						dataList.add(yAxisPrimaryData);
+						dataList.add(yAxisSecondaryData);
+						dataList.add(yAxisTertiaryData);
+						dataList.add(yAxisOtherData);
+														
+						// Add Chart
+						chartPanel.add(MoxieChartBuilder.createCombinationChart_test(timeArray, xLabel, dataList, title, loc));
+						
+						// Draw another line break
+						HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+						chartPanel.add(secondLine);
+						
+					}
+					
+					load(false);
+						
 				}
 				
 				@Override
@@ -1159,5 +1356,77 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			TimeDimenstion time = TimeDimenstion.valueOf(MineTBClient.get(timeDimensionList));
 			createDateFilterWidgets(time);
 		}
+	}
+	
+	public Double[] getColumnData(String[][] data, String[] timeArray, String loc, int index){
+		ArrayList<Double> doubleArray = new ArrayList<Double>();
+		for(int i=0; i<timeArray.length; i++){
+			double value = findValueInData(data, loc, timeArray[i], index);
+			doubleArray.add(value);
+		}
+		Double[] doubleArr = new Double[doubleArray.size()];
+		doubleArr = doubleArray.toArray(doubleArr);
+		return doubleArr;
+	}
+	
+	public Double[] getCumalativeData(String[][] data, String[] timeArray, String loc, int index){
+		ArrayList<Double> doubleArray = new ArrayList<Double>();
+		Double screeningValue = 0.0;
+		for(int i=0; i<timeArray.length; i++){
+			double value = findValueInData(data, loc, timeArray[i], index);
+			screeningValue = screeningValue + value;
+			doubleArray.add(screeningValue);
+		}
+		Double[] doubleArr = new Double[doubleArray.size()];
+		doubleArr = doubleArray.toArray(doubleArr);
+		return doubleArr;
+	}
+	
+	public String[] getTimeArray(){
+		
+		ArrayList<String> timeArray = new ArrayList<String>();
+		int from = 0;
+		int to = 0;
+		
+		// Append Date filter
+		String yFrom = MineTBClient.get(yearFrom);
+		String yTo = MineTBClient.get(yearTo);
+		String qFrom = MineTBClient.get(quarterFrom);
+		String qTo = MineTBClient.get(quarterTo);
+		String mFrom = MineTBClient.get(monthFrom);
+		String mTo = MineTBClient.get(monthTo);
+		String wFrom = MineTBClient.get(weekFrom);
+		String wTo = MineTBClient.get(weekTo);
+		TimeDimenstion time = TimeDimenstion.valueOf(MineTBClient.get(timeDimensionList));
+		switch(time) {
+		case YEAR:
+			from = Integer.valueOf(yFrom);
+			to = Integer.valueOf(yTo);
+			break;
+		case QUARTER:
+			from = Integer.valueOf(qFrom);
+			to = Integer.valueOf(qTo);
+			break;
+		case MONTH:
+			from = Integer.valueOf(mFrom);
+			to = Integer.valueOf(mTo);
+			break;
+		case WEEK:
+			from = Integer.valueOf(wFrom);
+			to = Integer.valueOf(wTo);
+			break;
+		default:
+			break;
+		}
+		
+		for(int i = from; i<=to; i++){
+			
+			timeArray.add(String.valueOf(i));
+		}
+		
+		String[] timeArr = new String[timeArray.size()];
+		timeArr = timeArray.toArray(timeArr);
+		
+		return timeArr;
 	}
 }
