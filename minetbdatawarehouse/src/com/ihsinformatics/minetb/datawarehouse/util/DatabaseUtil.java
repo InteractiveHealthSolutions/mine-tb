@@ -710,4 +710,12 @@ public final class DatabaseUtil {
 		this.closeConnection();
 		return obj;
 	}
+	
+	public void openDBConnection(){
+		this.openConnection();
+	}
+	
+	public void closeDBConnection(){
+		this.closeConnection();
+	}
 }
