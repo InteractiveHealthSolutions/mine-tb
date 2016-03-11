@@ -92,10 +92,10 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	static VerticalPanel chartHeaderPanel = new VerticalPanel();
 
 	private FlexTable footerFlexTable = new FlexTable();
-	private Image irdLogoImage = new Image("\\images\\irdSaLogo.png");
-	private Image aurumLogoImage = new Image("\\images\\aurumLogo.png");
-	private Image openmrsLogoImage = new Image("\\images\\openmrsLogo.png");
-	private Image androidLogoImage = new Image("\\images\\androidLogo.png");
+	private Image irdLogoImage = new Image("images\\irdSaLogo.png");
+	private Image aurumLogoImage = new Image("images\\aurumLogo.png");
+	private Image openmrsLogoImage = new Image("images\\openmrsLogo.png");
+	private Image androidLogoImage = new Image("images\\androidLogo.png");
 	
 	private FlexTable headerFlexTable = new FlexTable();
 	private FlexTable loginFlexTable = new FlexTable();
@@ -300,7 +300,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		String[] reports = { "Screening", "Sputum Submission", "GeneXpert: MTB Positive and Rif Resistants", "GeneXpert: MTB Negative and Other Results",
 								"Treatment Initiated", "Treatment Not Initiated Reasons", "Followup Smear Results", "Treatment Outcome Results",
 								"Screening Summary", "Sputum Submission Rates", "Treatment Initiation Rates", "Sputum Submission & Error Rates",
-								"DrawTest"
+								/*"DrawTest"*/
 								};
 		for (String str : reports) {
 			reportsList.addItem(str);
@@ -327,9 +327,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			weekFrom.addItem(String.valueOf(week));
 			weekTo.addItem(String.valueOf(week));
 		}
-		// TODO: ONLY FOR TESTING
-		userTextBox.setText("owais");
-		passwordTextBox.setText("Jingle94$");
+		
 	}
 
 	public void drawChart() {
@@ -1129,6 +1127,12 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 				@Override
 				public void onSuccess(final String[][] result) {
 					
+					HTML lineBreak = new HTML("<br>");
+					chartPanel.add(lineBreak);
+					HTML line = new HTML("<hr  style=\"width:100%;\" />");
+					// Draw a line break
+					chartPanel.add(line);
+					
 					ArrayList<GraphData> dataList = new ArrayList<GraphData>();
 					
 					String[] timeArray = getTimeArray();
@@ -1144,10 +1148,61 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						dataList.add(yAxisData);
 						
 					}
+					
 					String yLabel = "Screened";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList));
+					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList, "Total Screened"));
+					
+					
+					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
+					// Draw a line break
+					chartPanel.add(secondLine);
+					
+					dataList.clear();
+					
+					HTML lineBreak2 = new HTML("<br>");
+					chartPanel.add(lineBreak2);
+					HTML thirdLine = new HTML("<hr  style=\"width:100%;\" />");
+					// Draw a line break
+					chartPanel.add(thirdLine);
+					
+					for(String loc: locations){
 						
+						Number[] data = getColumnData(result, timeArray,loc,3);
+						GraphData yAxisData = new GraphData(loc, data);
+						
+						dataList.add(yAxisData);
+						
+					}
+					yLabel = "Presumptive";							
+					// Add Chart
+					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList, "Total Presumptives"));
+					
+					HTML fourthLine = new HTML("<hr  style=\"width:100%;\" />");
+					chartPanel.add(fourthLine);
+					
+					dataList.clear();
+					
+					HTML lineBreak3 = new HTML("<br>");
+					chartPanel.add(lineBreak3);
+					HTML fifthLine = new HTML("<hr  style=\"width:100%;\" />");
+					// Draw a line break
+					chartPanel.add(fifthLine);
+					
+					for(String loc: locations){
+						
+						Number[] data = getColumnData(result, timeArray,loc,4);
+						GraphData yAxisData = new GraphData(loc, data);
+						
+						dataList.add(yAxisData);
+						
+					}
+					yLabel = "Non-Suspect";							
+					// Add Chart
+					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList, "Total Non-Suspects"));
+						
+					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
+					chartPanel.add(sixthLine);
 						
 					load(false);
 						

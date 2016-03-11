@@ -28,19 +28,15 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
-	public static Chart createLineChart(String[] timeArray, String xLabel, String yLabel, ArrayList<GraphData> dataList){
+	public static Chart createLineChart(String[] timeArray, final String xLabel, String yLabel, ArrayList<GraphData> dataList, String title){
 		final Chart chart = new Chart()  
         .setType(Series.Type.LINE)  
         .setMarginRight(130)  
         .setMarginBottom(25)  
         .setChartTitle(new ChartTitle()  
-            .setText("Monthly Average Temperature")  
+            .setText(title)  
             .setX(-20)  // center  
-        )  
-        .setChartSubtitle(new ChartSubtitle()  
-            .setText("Source: WorldClimate.com")  
-            .setX(-20)  
-        )  
+        )
         .setLegend(new Legend()  
             .setLayout(Legend.Layout.VERTICAL)  
             .setAlign(Legend.Align.RIGHT)  
@@ -53,21 +49,23 @@ public class MoxieChartBuilder {
             .setFormatter(new ToolTipFormatter() {  
                 public String format(ToolTipData toolTipData) {  
                     return "<b>" + toolTipData.getSeriesName() + "</b><br/>" +  
-                        toolTipData.getXAsString() + ": " + toolTipData.getYAsDouble() + "°C";  
+                        toolTipData.getXAsString() + "(" + xLabel + "): " + toolTipData.getYAsDouble();  
                 }  
             })  
-        );  
+        );    
 
     chart.getXAxis()  
-        .setCategories(  
-            timeArray
-        );  
+    .setCategories(  
+    		timeArray 
+    ).setAxisTitle(new AxisTitle()  
+    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
+    );  
 
-    chart.getXAxis()  
-        .setAxisTitleText(xLabel); 
-    
-    chart.getYAxis()  
-    .setAxisTitleText(yLabel); 
+
+	chart.getYAxis().setMin(0)
+	    .setAxisTitle(new AxisTitle()  
+	        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
+	);
     
     for (int i=0; i<dataList.size(); i++) {
     	

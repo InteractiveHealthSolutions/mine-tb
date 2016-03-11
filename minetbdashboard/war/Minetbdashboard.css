@@ -96,6 +96,8 @@ hr {
    	width: 150px;
    	background: url(http://i63.tinypic.com/kao3n6.png) no-repeat 96% center;
    	-webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
    	border: solid 2px #c9c9c9;	
 }
 
