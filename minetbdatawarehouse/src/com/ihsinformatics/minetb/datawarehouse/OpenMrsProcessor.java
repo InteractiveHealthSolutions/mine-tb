@@ -75,6 +75,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	
 	ArrayList<String> sourceQueries = new ArrayList<String>();
 	ArrayList<String> targetQueries = new ArrayList<String>();
+	ArrayList<String> updateQueries = new ArrayList<String>();
 
 	/**
 	 * Constructor to initialize the object
@@ -180,6 +181,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		// }
 		return true;
 	}
+	
 
 	/**
 	 * Loads table data from CSV files into Data warehouse
@@ -288,8 +290,9 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		boolean result = true;
 		log.info("Updating OpenMRS data");
 		createSchema(false);
-		extract(dataPath, dateFrom, dateTo);
-		load(dataPath);
+		extractLoad(dateFrom, dateTo);
+		//extract(dataPath, dateFrom, dateTo);
+		//load(dataPath);
 		transform();
 		return result;
 	}
@@ -400,6 +403,13 @@ public class OpenMrsProcessor extends AbstractProcessor {
 
 	}
 	
+	/**
+	 * 
+	 * Extract and load Data from DB to Datawarehoue 
+	 * 
+	 * @return
+	 */
+	
 	public boolean extractLoad(){
 		log.info("Importing data from DB into Data Warehouse");
 		
@@ -413,7 +423,9 @@ public class OpenMrsProcessor extends AbstractProcessor {
 				
 				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
 				PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+				log.info(source.toString());
 				ResultSet data = source.executeQuery();
+				log.info(target.toString());
 				ResultSetMetaData metaData = data.getMetaData();
 				while (data.next()) {
 					for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -432,10 +444,137 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	}
 	
 	
+	/**
+	 * 
+	 * Extract and Load Data from DB to Datawarehouse in between given dates.
+	 *
+	 * @param dateFrom
+	 * @param dateTo
+	 * @return
+	 */
+	
+	public boolean extractLoad(Date dateFrom, Date dateTo) {
+		log.info("Importing data from source into dw");
+		
+		getExtractLoadQueries("update_extract_load.sql");
+		
+		String from = DateTimeUtil.getSqlDate(dateFrom);
+		String to = DateTimeUtil.getSqlDateTime(dateTo);
+		
+		for (int j = 0; j<sourceQueries.size(); j++) {
+			try {
+				
+				
+				openMrsDb.openDBConnection();
+				
+				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
+				
+				int counter = 1;
+				if(source.toString().contains("date_created")){
+					
+					source.setString(counter, from);counter++;
+					source.setString(counter, to);counter++;
+				}
+				
+				if(source.toString().contains("date_changed")){
+					
+					source.setString(counter, from);counter++;
+					source.setString(counter, to);counter++;
+				}
+				
+				if(source.toString().contains("date_voided")){
+					
+					source.setString(counter, from);counter++;
+					source.setString(counter, to);counter++;
+				}
+				
+				if(source.toString().contains("date_retired")){
+					
+					source.setString(counter, from);counter++;
+					source.setString(counter, to);counter++;
+				}
+				
+				log.info(source.toString());
+				ResultSet data = source.executeQuery();
+				
+				ResultSetMetaData metaData = data.getMetaData();
+				int uuidColumnNumber = getColumnNumber(metaData, "uuid");
+				String tableName = metaData.getTableName(1);
+				String columnName = metaData.getColumnName(1);
+				
+				while(data.next()){
+					
+					String columnData = "";
+					long value = 0;
+					
+					if(uuidColumnNumber == 0){
+						columnData = data.getString(1);
+						value = dwDb.getTotalRows(tableName, "where "+columnName+" = '"+columnData+"'");
+					}
+					else{
+						columnData = data.getString(uuidColumnNumber);
+						value = dwDb.getTotalRows(tableName, "where uuid = '"+columnData+"'");
+					}
+	
+					dwDb.openDBConnection();
+					if(value == -1){
+						PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+						for (int i = 1; i <= metaData.getColumnCount(); i++) {
+							
+							target.setString(i, data.getString(i));
+						}
+						log.info(target.toString());
+						target.executeUpdate();
+					}	
+					else{
+						PreparedStatement update = dwDb.getConnection().prepareStatement(updateQueries.get(j));
+						for (int i = 1; i <= metaData.getColumnCount(); i++) {
+							update.setString(i, data.getString(i));
+						}
+						update.setString(metaData.getColumnCount()+1, data.getString(1));
+						log.info(update.toString());
+						update.executeUpdate();
+					}
+				}	
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		openMrsDb.closeDBConnection();
+		dwDb.closeDBConnection();
+		return true;
+	}
+	
+	public int getColumnNumber(ResultSetMetaData metaData, String columnName){
+		try {
+			for (int i = 1; i <= metaData.getColumnCount(); i++) {
+				if(metaData.getColumnName(i).equals(columnName))
+					return i;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	
+	/**
+	 * 
+	 * Read Queries from given file Path and stores in Array list accordingly. 
+	 * 
+	 * @param dataPath
+	 * @return
+	 */
+	
 	public boolean getExtractLoadQueries(String dataPath){
 		
 		FileUtil fileUtil = new FileUtil();
-		String[] queries = fileUtil.getLines("extract_load.sql");
+		String[] queries = fileUtil.getLines(dataPath);
+		
+		sourceQueries.clear();
+		targetQueries.clear();
+		updateQueries.clear();
 		
 		for(String query : queries){
 			
@@ -443,6 +582,8 @@ public class OpenMrsProcessor extends AbstractProcessor {
 				sourceQueries.add(query);
 			} else if (query.toUpperCase().startsWith("INSERT")) {
 				targetQueries.add(query);
+			} else if (query.toUpperCase().startsWith("UPDATE")) {
+				updateQueries.add(query);
 			}
 			
 		}

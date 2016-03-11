@@ -131,9 +131,18 @@ public final class DatabaseUtil {
 
 	void openConnection() {
 		try {
-			Class.forName(driverName).newInstance();
-			con = DriverManager.getConnection(this.url, this.userName,
-					this.password);
+			
+			if(con == null){
+				Class.forName(driverName).newInstance();
+				con = DriverManager.getConnection(this.url, this.userName,
+						this.password);
+			}
+			
+			if(con.isClosed()){
+				Class.forName(driverName).newInstance();
+				con = DriverManager.getConnection(this.url, this.userName,
+						this.password);
+			}
 		} catch (Exception e) {
 		}
 	}
@@ -410,6 +419,7 @@ public final class DatabaseUtil {
 		long result = -1;
 		try {
 			String command = "SELECT COUNT(*) FROM " + tableName + " " + filter;
+			System.out.println(command);
 			String s = this.runCommand(CommandType.SELECT, command).toString();
 			result = Long.parseLong(s);
 		} catch (Exception e) {
@@ -694,7 +704,6 @@ public final class DatabaseUtil {
 					obj = st.executeUpdate(command);
 					break;
 				case SELECT :
-					this.openConnection();
 					ResultSet rs = st.executeQuery(command);
 					rs.next();
 					obj = rs.getObject(1);

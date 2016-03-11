@@ -113,7 +113,7 @@ public final class DataWarehouseMain {
 					Date dateFrom = new Date();
 					Date dateTo = new Date();
 					Calendar instance = Calendar.getInstance();
-					instance.add(Calendar.DATE, days);
+					instance.add(Calendar.DATE, -days);
 					dateFrom = instance.getTime();
 					dw.updateWarehosue(dataPathForUpdate, dateFrom, dateTo);
 				} catch (Exception e) {
@@ -221,17 +221,17 @@ public final class DataWarehouseMain {
 	 * Drops and recreates Data warehouse tables to hard reset
 	 */
 	public void resetDataWarehouse() {
-		/*log.info("Starting DW hard reset");
+		log.info("Starting DW hard reset");
 		Object[] tables = dwDb.getColumnData("information_schema.tables",
 				"table_name", "table_schema='" + dwSchema + "'");
 		for (Object t : tables) {
 			log.info("Deleting table " + t);
 			dwDb.deleteTable(t.toString());
-		}*/
+		}
 		extractLoad(true);
-		//createDimensions();
-		//transform();
-		//createFacts();
+		createDimensions();
+		transform();
+		createFacts();
 		
 		String query = "update meta_data set value = now() where tag = 'last_updated';";
 		dwDb.runCommand(CommandType.UPDATE, query.toString());
@@ -339,6 +339,11 @@ public final class DataWarehouseMain {
 		if (!result) {
 			log.warning("OpenMRS DB transformation completed with warnings.");
 		}
+		createFacts();
 		log.info("Finished DW update");
+		
+		String query = "update meta_data set value = now() where tag = 'last_updated';";
+		dwDb.runCommand(CommandType.UPDATE, query.toString());
+		
 	}
 }
