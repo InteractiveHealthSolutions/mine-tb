@@ -75,6 +75,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	
 	ArrayList<String> sourceQueries = new ArrayList<String>();
 	ArrayList<String> targetQueries = new ArrayList<String>();
+	ArrayList<String> deleteQueries = new ArrayList<String>();
 	ArrayList<String> updateQueries = new ArrayList<String>();
 
 	/**
@@ -293,7 +294,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		extractLoad(dateFrom, dateTo);
 		//extract(dataPath, dateFrom, dateTo);
 		//load(dataPath);
-		transform();
+		//transform();
 		return result;
 	}
 
@@ -461,11 +462,11 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		String from = DateTimeUtil.getSqlDate(dateFrom);
 		String to = DateTimeUtil.getSqlDateTime(dateTo);
 		
+		openMrsDb.openDBConnection();
+		dwDb.openDBConnection();
+		
 		for (int j = 0; j<sourceQueries.size(); j++) {
 			try {
-				
-				
-				openMrsDb.openDBConnection();
 				
 				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
 				
@@ -499,42 +500,31 @@ public class OpenMrsProcessor extends AbstractProcessor {
 				
 				ResultSetMetaData metaData = data.getMetaData();
 				int uuidColumnNumber = getColumnNumber(metaData, "uuid");
-				String tableName = metaData.getTableName(1);
-				String columnName = metaData.getColumnName(1);
 				
 				while(data.next()){
 					
 					String columnData = "";
-					long value = 0;
+					PreparedStatement delete = dwDb.getConnection().prepareStatement(deleteQueries.get(j));
 					
 					if(uuidColumnNumber == 0){
 						columnData = data.getString(1);
-						value = dwDb.getTotalRows(tableName, "where "+columnName+" = '"+columnData+"'");
 					}
 					else{
 						columnData = data.getString(uuidColumnNumber);
-						value = dwDb.getTotalRows(tableName, "where uuid = '"+columnData+"'");
 					}
-	
-					dwDb.openDBConnection();
-					if(value == -1){
-						PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
-						for (int i = 1; i <= metaData.getColumnCount(); i++) {
-							
-							target.setString(i, data.getString(i));
-						}
-						log.info(target.toString());
-						target.executeUpdate();
-					}	
-					else{
-						PreparedStatement update = dwDb.getConnection().prepareStatement(updateQueries.get(j));
-						for (int i = 1; i <= metaData.getColumnCount(); i++) {
-							update.setString(i, data.getString(i));
-						}
-						update.setString(metaData.getColumnCount()+1, data.getString(1));
-						log.info(update.toString());
-						update.executeUpdate();
+					
+					delete.setString(1, columnData);
+					log.info(delete.toString());
+					delete.executeQuery();
+					
+					PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+					for (int i = 1; i <= metaData.getColumnCount(); i++) {
+						
+						target.setString(i, data.getString(i));
 					}
+					log.info(target.toString());
+					target.executeUpdate();
+					
 				}	
 				
 			} catch (SQLException e) {
@@ -574,6 +564,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		
 		sourceQueries.clear();
 		targetQueries.clear();
+		deleteQueries.clear();
 		updateQueries.clear();
 		
 		for(String query : queries){
@@ -582,6 +573,8 @@ public class OpenMrsProcessor extends AbstractProcessor {
 				sourceQueries.add(query);
 			} else if (query.toUpperCase().startsWith("INSERT")) {
 				targetQueries.add(query);
+			} else if (query.toUpperCase().startsWith("DELETE")) {
+				deleteQueries.add(query);
 			} else if (query.toUpperCase().startsWith("UPDATE")) {
 				updateQueries.add(query);
 			}

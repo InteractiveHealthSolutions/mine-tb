@@ -339,6 +339,8 @@ public final class DataWarehouseMain {
 		if (!result) {
 			log.warning("OpenMRS DB transformation completed with warnings.");
 		}
+		createDimensions();
+		transform();
 		createFacts();
 		log.info("Finished DW update");
 		
