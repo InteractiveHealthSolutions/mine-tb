@@ -851,6 +851,106 @@ public class ServerService
 		return details;
 	}
 	
+	public String[][] getPatientNameAndDates (String id, String type)
+	{
+		if(type.equals("pid")){
+			String response = "";
+			String[][] details = null;
+			JSONObject json = new JSONObject ();
+			try
+			{
+				json.put ("app_ver", App.getVersion ());
+				json.put ("form_name", FormType.GET_PATIENT_NAME_DATES);
+				json.put ("patient_id", id);
+				response = get ("?content=" + JsonUtil.getEncodedJson (json));
+				if (response == null)
+				{
+					return details;
+				}
+				JSONObject jsonResponse = JsonUtil.getJSONObject (response);
+				{
+					try
+					{
+						String firstName = jsonResponse.get ("first_name").toString ();
+						String lastName = jsonResponse.get ("last_name").toString ();
+						int encounterSize = jsonResponse.getInt("enc_size");
+						int size = 2 + encounterSize;
+						details = new String[size][];
+						details[0] = new String[] {"FirstName", firstName};
+						details[1] = new String[] {"LastName", lastName};
+						int j = 0;
+						for(int i=2; i<size; i++){
+							details[i] = new String[] {"date"+j, jsonResponse.get ("date_"+j).toString ()};
+							j++;
+						}
+					}
+					catch (JSONException e)
+					{
+						Log.e (TAG, e.getMessage ());
+					}
+				}
+			}
+			catch (JSONException e)
+			{
+				Log.e (TAG, e.getMessage ());
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				Log.e (TAG, e.getMessage ());
+			}
+			return details;
+		}
+		else{
+			String response = "";
+			String[][] details = null;
+			JSONObject json = new JSONObject ();
+			try
+			{
+				json.put ("app_ver", App.getVersion ());
+				json.put ("form_name", FormType.GET_PATIENT_NAME_FROM_TESTID_DATES);
+				json.put ("test_id", id);
+				json.put ("result", "Y");
+				response = get ("?content=" + JsonUtil.getEncodedJson (json));
+				if (response == null)
+				{
+					return details;
+				}
+				JSONObject jsonResponse = JsonUtil.getJSONObject (response);
+				{
+					try
+					{
+						String firstName = jsonResponse.get ("first_name").toString ();
+						String lastName = jsonResponse.get ("last_name").toString ();
+						int encounterSize = jsonResponse.getInt("enc_size");
+						int size = 2 + encounterSize;
+						details = new String[size][];
+						details[0] = new String[] {"FirstName", firstName};
+						details[1] = new String[] {"LastName", lastName};
+						int j = 0;
+						for(int i=2; i<size; i++){
+							details[i] = new String[] {"date"+j, jsonResponse.get ("date_"+j).toString ()};
+							j++;
+						}
+					}
+					catch (JSONException e)
+					{
+						Log.e (TAG, e.getMessage ());
+					}
+				}
+			}
+			catch (JSONException e)
+			{
+				Log.e (TAG, e.getMessage ());
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				Log.e (TAG, e.getMessage ());
+			}
+			return details;
+		}
+	}
+	
+	
 	public String[][] getPatientName (String id, String type)
 	{
 		if(type.equals("pid")){

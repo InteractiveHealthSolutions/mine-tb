@@ -55,6 +55,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -94,6 +95,9 @@ public class SputumResultActivity extends AbstractFragmentActivity
 	MyTextView			formDateTextView;
 	MyButton			formDateButton;
 	
+	MyTextView			sputumSubmissionDateTextView;
+	Spinner				sputumSubmissionDateButton;
+	
 	MyTextView			genexpertResultTextView;
 	
 	MyRadioGroup 		genexpertResultGroup;
@@ -118,6 +122,7 @@ public class SputumResultActivity extends AbstractFragmentActivity
 	
 	String firstNameValue = "";
 	String lastNameValue = "";
+	String array[];
 	
 	private static Toast toast;
 	
@@ -194,7 +199,7 @@ public class SputumResultActivity extends AbstractFragmentActivity
 		
 		FORM_NAME = "Sputum Result Form";
 		TAG = "SputumResultActivity";
-		PAGE_COUNT = 3;
+		PAGE_COUNT = 4;
 		pager = (ViewPager) findViewById (R.template_id.pager);
 		navigationSeekbar.setMax (PAGE_COUNT - 1);
 		navigatorLayout = (LinearLayout) findViewById (R.template_id.navigatorLayout);
@@ -230,6 +235,9 @@ public class SputumResultActivity extends AbstractFragmentActivity
 		
 		formDateTextView = new MyTextView (context, R.style.text, R.string.date_result_recieved);
 		formDateButton = new MyButton (context, R.style.button, R.drawable.custom_button_beige, R.string.date_result_recieved, R.string.date_result_recieved);
+		
+		sputumSubmissionDateTextView = new MyTextView (context, R.style.text, R.string.date_sputum_submission);
+		sputumSubmissionDateButton = new Spinner (context);
 		
 		genexpertResultTextView = new MyTextView (context, R.style.text, R.string.gxp_result);
 		
@@ -274,7 +282,8 @@ public class SputumResultActivity extends AbstractFragmentActivity
 		
 		View[][] viewGroups = { 
 				    { submitByTextView, submitOption, scanBarcode, patientIdMyTextView, patientId, testIdMyTextView, testId,firstNameTextView, firstName, searchPatientButton},
-				    {formDateTextView, formDateButton, genexpertResultTextView, genexpertResultGroup},
+				    {formDateTextView, formDateButton, sputumSubmissionDateTextView, sputumSubmissionDateButton},
+				    {genexpertResultTextView, genexpertResultGroup},
 					{rifResultTextView, rifResultGroup, sputumResultSpace,saveButton },
 					};
 		// Create layouts and store in ArrayList
@@ -444,6 +453,7 @@ public class SputumResultActivity extends AbstractFragmentActivity
 				values.put ("PatientId", App.get (patientId));
 				
 				final ArrayList<String[]> observations = new ArrayList<String[]> ();
+				observations.add(new String[] {"Date Of Sputum Submission", App.get (sputumSubmissionDateButton)});
 			    observations.add (new String[] {"Date Of Test Report", App.getSqlDate (formDate)});
 				if (genexpertResultGroup.getVisibility() == View.VISIBLE)
 					observations.add (new String[] {"GeneXpert Result", negativeGenexpertResult.isChecked() ? "MTB Negative" :(positiveGenexpertResult.isChecked() ? "MTB Positive" : (leakedGenexpertResult.isChecked() ? "Leaked" : (insufficientGenexpertResult.isChecked() ? "Insufficient Quantity" : (unsuccessfulGenexpertResult.isChecked() ? "Unsuccessful" : (rejectedGenexpertResult.isChecked() ? "Rejected" : "Incorrect Paperwork")))))});
@@ -743,7 +753,7 @@ public class SputumResultActivity extends AbstractFragmentActivity
 								}
 							});
 							//TODO: Uncomment when live
-							String[][] result = serverService.getPatientName (ids,types);
+							String[][] result = serverService.getPatientNameAndDates (ids,types);
 							firstNameValue = "";
 							lastNameValue = "";
 							if(result == null)
@@ -751,6 +761,14 @@ public class SputumResultActivity extends AbstractFragmentActivity
 							
 							firstNameValue = result[0][1];
 							lastNameValue = result[1][1];
+							
+							int size = result.length;
+							array = new String[size - 2];
+							int j = 0;
+							for(int i = 2; i < size; i++){
+								array[j] = result[i][1];
+								j++;
+							}
 							
 							return "SUCCESS";
 						}
@@ -764,6 +782,21 @@ public class SputumResultActivity extends AbstractFragmentActivity
 						protected void onPostExecute (String result)
 						{
 							firstName.setText(firstNameValue+" "+lastNameValue);
+							
+							Boolean enabled = sputumSubmissionDateButton.isEnabled();
+							int drawable = enabled ? R.drawable.custom_spinner_item_enabled : R.drawable.custom_spinner_item_disabled;
+							ArrayAdapter<String> districtAdapter = new ArrayAdapter<String> (getBaseContext(), drawable, array);
+							sputumSubmissionDateButton.setAdapter (districtAdapter);
+							
+							/*// Set spinner position a/c to selection
+							String district = App.getDistrict();
+							if(district != "")
+							{
+								ArrayAdapter districtAdap = (ArrayAdapter) sputumSubmissionDateButton.getAdapter(); //cast to an ArrayAdapter
+								int spinnerPosition = districtAdap.getPosition(district);
+								//set the default according to value
+								sputumSubmissionDateButton.setSelection(spinnerPosition);
+							}*/
 							
 							super.onPostExecute (result);
 							loading.dismiss ();

@@ -68,4 +68,6 @@
     
     <string name="scan_nhls_code">"Scan NHLS Barcode"</string>
     
+    <string name="date_sputum_submission">"Date of Sputum Submission"</string>
+    
 </resources>

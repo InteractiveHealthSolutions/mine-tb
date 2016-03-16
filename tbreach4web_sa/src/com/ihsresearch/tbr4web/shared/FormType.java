@@ -64,4 +64,6 @@ public class FormType
 	public static final String  GET_LOCATION_SETUP = "Get Location Setup";
 	public static final String  GET_SCREENING_INFO = "Get Screening Information";
 	public static final String 	HIV_TESTING = "HIV Testing";
+	public static final String  GET_PATIENT_NAME_DATES 		=  "Get Patient Name from pid date";
+	public static final String  GET_PATIENT_NAME_FROM_TESTID_DATES = "Get Patient from Test Id date";
 }
