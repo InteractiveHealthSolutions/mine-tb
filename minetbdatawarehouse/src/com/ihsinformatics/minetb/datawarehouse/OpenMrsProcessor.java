@@ -73,8 +73,8 @@ public class OpenMrsProcessor extends AbstractProcessor {
 			" user_role", " users", " visit", " visit_attribute",
 			" visit_attribute_type", " visit_type" };
 	
-	ArrayList<String> sourceQueries = new ArrayList<String>();
-	ArrayList<String> targetQueries = new ArrayList<String>();
+	ArrayList<String> selectQueries = new ArrayList<String>();
+	ArrayList<String> insertQueries = new ArrayList<String>();
 	ArrayList<String> deleteQueries = new ArrayList<String>();
 	ArrayList<String> updateQueries = new ArrayList<String>();
 
@@ -405,12 +405,9 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	}
 	
 	/**
-	 * 
 	 * Extract and load Data from DB to Datawarehoue 
 	 * 
-	 * @return
 	 */
-	
 	public boolean extractLoad(){
 		log.info("Importing data from DB into Data Warehouse");
 		
@@ -419,19 +416,21 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		openMrsDb.openDBConnection();
 		dwDb.openDBConnection();
 		
-		for (int j = 0; j<sourceQueries.size(); j++) {
+		for (int j = 0; j<selectQueries.size(); j++) {
 			try {
 				
-				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
-				PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+				// get select query
+				PreparedStatement source = openMrsDb.getConnection().prepareStatement(selectQueries.get(j));
+				// get insert query
+				PreparedStatement target = dwDb.getConnection().prepareStatement(insertQueries.get(j));
 				log.info(source.toString());
 				ResultSet data = source.executeQuery();
-				log.info(target.toString());
 				ResultSetMetaData metaData = data.getMetaData();
 				while (data.next()) {
 					for (int i = 1; i <= metaData.getColumnCount(); i++) {
 						target.setString(i, data.getString(i));
 					}
+					log.info(target.toString());
 					target.executeUpdate();
 				}
 			} catch (SQLException e) {
@@ -453,7 +452,6 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	 * @param dateTo
 	 * @return
 	 */
-	
 	public boolean extractLoad(Date dateFrom, Date dateTo) {
 		log.info("Importing data from source into dw");
 		
@@ -465,11 +463,13 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		openMrsDb.openDBConnection();
 		dwDb.openDBConnection();
 		
-		for (int j = 0; j<sourceQueries.size(); j++) {
+		for (int j = 0; j<selectQueries.size(); j++) {
 			try {
 				
-				PreparedStatement source = openMrsDb.getConnection().prepareStatement(sourceQueries.get(j));
+				// Get Select Query
+				PreparedStatement source = openMrsDb.getConnection().prepareStatement(selectQueries.get(j));
 				
+				// set where clause values
 				int counter = 1;
 				if(source.toString().contains("date_created")){
 					
@@ -498,26 +498,30 @@ public class OpenMrsProcessor extends AbstractProcessor {
 				log.info(source.toString());
 				ResultSet data = source.executeQuery();
 				
+				// get column# for uuid from result set
 				ResultSetMetaData metaData = data.getMetaData();
 				int uuidColumnNumber = getColumnNumber(metaData, "uuid");
 				
+				// for each record in result set
 				while(data.next()){
 					
 					String columnData = "";
+					// get delete query
 					PreparedStatement delete = dwDb.getConnection().prepareStatement(deleteQueries.get(j));
 					
 					if(uuidColumnNumber == 0){
-						columnData = data.getString(1);
+						columnData = data.getString(1);    // delete via id if uuid is not in table
 					}
 					else{
-						columnData = data.getString(uuidColumnNumber);
+						columnData = data.getString(uuidColumnNumber);    // if uuid available
 					}
 					
 					delete.setString(1, columnData);
 					log.info(delete.toString());
 					delete.executeQuery();
 					
-					PreparedStatement target = dwDb.getConnection().prepareStatement(targetQueries.get(j));
+					// get insert query
+					PreparedStatement target = dwDb.getConnection().prepareStatement(insertQueries.get(j));
 					for (int i = 1; i <= metaData.getColumnCount(); i++) {
 						
 						target.setString(i, data.getString(i));
@@ -536,6 +540,15 @@ public class OpenMrsProcessor extends AbstractProcessor {
 		return true;
 	}
 	
+	
+	/**
+	 * 
+	 *returns the column number from result set metadata matching the columnName
+	 *
+	 * @param metaData
+	 * @param columnName 
+	 * 
+	 */
 	public int getColumnNumber(ResultSetMetaData metaData, String columnName){
 		try {
 			for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -556,23 +569,22 @@ public class OpenMrsProcessor extends AbstractProcessor {
 	 * @param dataPath
 	 * @return
 	 */
-	
 	public boolean getExtractLoadQueries(String dataPath){
 		
 		FileUtil fileUtil = new FileUtil();
 		String[] queries = fileUtil.getLines(dataPath);
 		
-		sourceQueries.clear();
-		targetQueries.clear();
+		selectQueries.clear();
+		insertQueries.clear();
 		deleteQueries.clear();
 		updateQueries.clear();
 		
 		for(String query : queries){
 			
 			if (query.toUpperCase().startsWith("SELECT")) {
-				sourceQueries.add(query);
+				selectQueries.add(query);
 			} else if (query.toUpperCase().startsWith("INSERT")) {
-				targetQueries.add(query);
+				insertQueries.add(query);
 			} else if (query.toUpperCase().startsWith("DELETE")) {
 				deleteQueries.add(query);
 			} else if (query.toUpperCase().startsWith("UPDATE")) {

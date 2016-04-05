@@ -242,13 +242,18 @@ public final class DataWarehouseMain {
 	public void extractLoad(boolean fromScratch) {
 		log.info("Starting Extract/Load");
 		// OpenMRS EL
-		//openMrs.createSchema(fromScratch);
+	    openMrs.createSchema(fromScratch);
 		openMrs.extractLoad();
-		//openMrs.extract(dataPath);
-		//openMrs.load(dataPath);
+		openMrs.extract(dataPath);
+		openMrs.load(dataPath);
 		log.info("Finished Extract/Load");
 	}
 
+	/**
+	 * Creates and fill dimension tables from query file.
+	 * 
+	 */
+	
 	public void createDimensions() {
 		log.info("Starting dimension modeling");
 		FileUtil fileUtil = new FileUtil();
@@ -310,6 +315,10 @@ public final class DataWarehouseMain {
 		log.info("Finished data transformation");
 	}
 
+	/**
+	 * Creates and fill fact tables from query file.
+	 */
+	
 	public void createFacts() {
 		log.info("Creating fact tables");
 		FileUtil fileUtil = new FileUtil();
@@ -333,6 +342,13 @@ public final class DataWarehouseMain {
 		log.info("Finished creating fact tables");
 	}
 
+	/**
+	 * Updates dwh from source db between given dates.
+	 * 
+	 * @param dataPath
+	 * @param dateFrom
+	 * @param dateTo
+	 */
 	public void updateWarehosue(String dataPath, Date dateFrom, Date dateTo) {
 		log.info("Starting DW update");
 		boolean result = openMrs.update(dataPath, dateFrom, dateTo);

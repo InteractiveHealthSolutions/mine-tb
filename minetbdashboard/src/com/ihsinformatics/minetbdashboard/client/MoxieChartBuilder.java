@@ -23,6 +23,8 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
 
 /**
+ * Chart Builder Class using Moxie Group - High Charts...
+ * 
  * @author Rabbia
  *
  */
