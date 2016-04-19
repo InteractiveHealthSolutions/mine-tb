@@ -11,6 +11,7 @@
 */
 package com.ihsinformatics.minetbdashboard.client;
 
+import java.awt.Label;
 import java.util.ArrayList;
 
 import org.apache.taglibs.response.SetHeaderTag;
@@ -30,7 +31,21 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
-	public static Chart createLineChart(String[] timeArray, final String xLabel, String yLabel, ArrayList<GraphData> dataList, String title){
+	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+		
+		if(dataList.size() > 10){
+			
+			Chart chart = createBarChart(timeArray,xLabel, yLabel, dataList, title);
+			return chart;
+			
+		}
+		
+		if(timeArray.length == 1){
+			
+			Chart chart = createColumnChart(timeArray,xLabel, yLabel, dataList, title);
+			return chart;
+		}
+		
 		final Chart chart = new Chart()  
         .setType(Series.Type.LINE)  
         .setMarginRight(130)  
@@ -39,6 +54,7 @@ public class MoxieChartBuilder {
             .setText(title)  
             .setX(-20)  // center  
         )
+        .setOption("/lang/numericSymbols", null)
         .setLegend(new Legend()  
             .setLayout(Legend.Layout.VERTICAL)  
             .setAlign(Legend.Align.RIGHT)  
@@ -48,13 +64,15 @@ public class MoxieChartBuilder {
             .setBorderWidth(0)  
         )  
         .setToolTip(new ToolTip()  
-            .setFormatter(new ToolTipFormatter() {  
-                public String format(ToolTipData toolTipData) {  
-                    return "<b>" + toolTipData.getSeriesName() + "</b><br/>" +  
-                        toolTipData.getXAsString() + "(" + xLabel + "): " + toolTipData.getYAsDouble();  
-                }  
-            })  
-        );    
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );
+		
+		
 
     chart.getXAxis()  
     .setCategories(  
@@ -68,7 +86,7 @@ public class MoxieChartBuilder {
 	    .setAxisTitle(new AxisTitle()  
 	        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
 	);
-    
+	
     for (int i=0; i<dataList.size(); i++) {
     	
     	chart.addSeries(chart.createSeries()  
@@ -81,6 +99,113 @@ public class MoxieChartBuilder {
     return chart;  
 	}
 	
+	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+			
+			final Chart chart = new Chart()  
+	        .setType(Series.Type.COLUMN)  
+	        .setMarginRight(130)  
+	        .setMarginBottom(25)  
+	        .setChartTitle(new ChartTitle()  
+	            .setText(title)  
+	            .setX(-20)  // center  
+	        )
+	        .setOption("/lang/numericSymbols", null)
+	        .setLegend(new Legend()  
+	            .setLayout(Legend.Layout.VERTICAL)  
+	            .setAlign(Legend.Align.RIGHT)  
+	            .setVerticalAlign(Legend.VerticalAlign.TOP)  
+	            .setX(-10)  
+	            .setY(100)  
+	            .setBorderWidth(0)  
+	        )  
+	        .setToolTip(new ToolTip()  
+	                .setFormatter(new ToolTipFormatter() {  
+	                    public String format(ToolTipData toolTipData) {  
+	                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+	                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+	                    }  
+	                })  
+	            );
+			
+	
+			chart.getXAxis()  
+		    .setCategories(  
+		    		timeArray 
+		    ).setAxisTitle(new AxisTitle()  
+		    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
+		    );  
+
+
+			chart.getYAxis().setMin(0)
+			    .setAxisTitle(new AxisTitle()  
+			        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
+			);
+			
+		    for (int i=0; i<dataList.size(); i++) {
+		    	
+		    	chart.addSeries(chart.createSeries()  
+		    	        .setName(dataList.get(i).getTitle())  
+		    	        .setPoints(dataList.get(i).getData() 
+		    	        )  
+		    	    );
+		    } 
+
+		    return chart; 
+	}
+	
+	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+		
+		final Chart chart = new Chart()  
+        .setType(Series.Type.BAR)  
+        .setMarginRight(130)  
+        .setMarginBottom(25)  
+        .setChartTitle(new ChartTitle()  
+            .setText(title)  
+            .setX(-20)  // center  
+        )
+        .setOption("/lang/numericSymbols", null)
+        .setLegend(new Legend()  
+            .setLayout(Legend.Layout.VERTICAL)  
+            .setAlign(Legend.Align.RIGHT)  
+            .setVerticalAlign(Legend.VerticalAlign.TOP)  
+            .setX(-10)  
+            .setY(100)  
+            .setBorderWidth(0)  
+        )  
+        .setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );
+		
+
+		chart.getXAxis()  
+	    .setCategories(  
+	    		timeArray 
+	    ).setAxisTitle(new AxisTitle()  
+	    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
+	    );  
+
+
+		chart.getYAxis().setMin(0)
+		    .setAxisTitle(new AxisTitle()  
+		        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
+		);
+		
+	    for (int i=0; i<dataList.size(); i++) {
+	    	
+	    	chart.addSeries(chart.createSeries()  
+	    	        .setName(dataList.get(i).getTitle())  
+	    	        .setPoints(dataList.get(i).getData() 
+	    	        )  
+	    	    );
+	    } 
+
+	    return chart; 
+}
 	
 	public static Chart createStackChartWithLine(String[] timeData, Number[] primaryData , Number[] secondaryData, Number[] lineData, String title, String loc, final String time, String yLabel, final String lineLabel, String primaryTitle, String secondaryTitle) {  
 		  
@@ -99,7 +224,8 @@ public class MoxieChartBuilder {
                 .setBorderColor("#CCC")  
                 .setBorderWidth(1)  
                 .setShadow(false)  
-            )  
+            )
+            .setOption("/lang/numericSymbols", null)
             .setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
@@ -109,7 +235,7 @@ public class MoxieChartBuilder {
                     }  
                 })  
             );  
-  
+          
         chart.getXAxis()  
             .setCategories(timeData)
             .setAxisTitle(new AxisTitle()  
@@ -182,6 +308,7 @@ public class MoxieChartBuilder {
 	                .setBorderWidth(1)  
 	                .setShadow(false)   
 	            )  
+	            .setOption("/lang/numericSymbols", null)
 	            .setToolTip(new ToolTip()  
 	                .setFormatter(new ToolTipFormatter() {  
 	                    public String format(ToolTipData toolTipData) {  
@@ -191,7 +318,7 @@ public class MoxieChartBuilder {
 	                    }  
 	                })  
 	            );  
-	  
+	  	        
 	        chart.getXAxis()  
 	            .setCategories(timeData).setAxisTitle(new AxisTitle()  
 	            .setText(time).setStyle(new Style().setFontSize("16px"))  
@@ -239,6 +366,7 @@ public class MoxieChartBuilder {
                     }  
                 })  
             )  
+            .setOption("/lang/numericSymbols", null)
             .setLegend(new Legend()  
 	            .setAlign(Legend.Align.RIGHT)  
 	            .setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
@@ -248,7 +376,7 @@ public class MoxieChartBuilder {
 	            .setBorderWidth(1)  
 	            .setShadow(false)  
             );  
-  
+          
         chart.getXAxis()  
             .setCategories(  
             		xAxisData 

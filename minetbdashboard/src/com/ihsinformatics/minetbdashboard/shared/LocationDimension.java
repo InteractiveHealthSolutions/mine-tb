@@ -20,5 +20,5 @@ package com.ihsinformatics.minetbdashboard.shared;
  *
  */
 public enum LocationDimension {
-	DISTRICT, FACILITY, PROVINCE, SCREENER
+	PROVINCE, DISTRICT, FACILITY,  SCREENER
 }

@@ -20,5 +20,5 @@ package com.ihsinformatics.minetbdashboard.shared;
  *
  */
 public enum TimeDimenstion {
-	YEAR, MONTH, QUARTER, WEEK
+	YEAR, QUARTER, MONTH, WEEK
 }

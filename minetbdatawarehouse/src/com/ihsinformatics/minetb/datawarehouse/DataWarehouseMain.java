@@ -244,8 +244,8 @@ public final class DataWarehouseMain {
 		// OpenMRS EL
 	    openMrs.createSchema(fromScratch);
 		openMrs.extractLoad();
-		openMrs.extract(dataPath);
-		openMrs.load(dataPath);
+		//openMrs.extract(dataPath);
+		//openMrs.load(dataPath);
 		log.info("Finished Extract/Load");
 	}
 
