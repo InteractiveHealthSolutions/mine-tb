@@ -17,6 +17,7 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.event.dom.client.KeyPressEvent;
 import com.google.gwt.event.dom.client.KeyPressHandler;
+import com.google.gwt.thirdparty.guava.common.util.concurrent.MoreExecutors;
 import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -107,6 +108,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private Label userNameLabel = new Label("User ID:");
 	private Label passwordLabel = new Label("Password:");
 	private Label logoutLabel = new Label("Logout");
+	private Label backLabel = new Label("<< Back");
 	private Label loggedInLabel = new Label("Logged in as: ");
 	private Label userLoggedInLabel = new Label();
 	
@@ -143,8 +145,8 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private TextBox userTextBox = new TextBox();
 	private PasswordTextBox passwordTextBox = new PasswordTextBox();
 
-	private HTML reportingOptionsLabel = new HTML("<font size=\"4\"> Reporting Options </font> <br> <br> ");
-	private HTML summaryLabel = new HTML("<font size=\"4\"> Summary Report </font> <br> <br> ");
+	private HTML reportingOptionsLabel = new HTML("<font size=\"8\"> Reporting Options </font> <br> <br> ");
+	private HTML summaryLabel = new HTML("<font size=\"8\"> Summary Report </font> <br> <br> ");
 	
 	private ListBox reportsList = new ListBox();
 	private ListBox locationDimensionList = new ListBox();
@@ -162,6 +164,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 	private Button loginButton = new Button("Login");
 	private Button showButton = new Button("Show Report");
 	private Button clearButton = new Button("Clear");
+	private Button detailedReports = new Button("Detailed Reports");
 
 	/* Chart objects */
 	ChartLoader chartLoader;
@@ -216,12 +219,10 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		grid.setWidget(0, 1, userLoggedInLabel);
 		
 		logoutLabel.setStyleName("logout-button");
+		backLabel.setStyleName("logout-button");
 		
-		logoutLabel.addClickHandler(new ClickHandler() {
-            public void onClick(ClickEvent event) {
-            	logout();
-            }
-        });
+		backLabel.addClickHandler(this);
+		logoutLabel.addClickHandler(this);
 		
 		openmrsLogoImage.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent event) {
@@ -268,7 +269,6 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		chartPanel.getElement().setAttribute("align", "center");
 		reportingOptionsLabel.setStyleName("MineTBHeader");
 		
-		optionsTable.setStyleName("ReportingFlexTable");
 		optionsTable.setWidget(0, 0, new Label("Report:"));
 		optionsTable.setWidget(0, 1, reportsList);
 		optionsTable.setWidget(1, 0, new Label("Reporting Level:"));
@@ -279,35 +279,55 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		optionsTable.setWidget(3, 1, dateFilterTable);
 		
 		summaryLabel.setStyleName("MineTBHeader");
-		summaryFlexTable.setStyleName("ReportingFlexTable");
-		summaryFlexTable.setWidget(0,1, new Label("Ugu"));
-		summaryFlexTable.setWidget(0,2, new Label("eThekwini"));
-		summaryFlexTable.setWidget(0,3, new Label("Total"));
+		summaryFlexTable.setText(0,1, "Ugu");
+		summaryFlexTable.setText(0,2, "eThekwini");
+		summaryFlexTable.setText(0,3, "Total");
+		
+		summaryFlexTable.getCellFormatter().addStyleName(0, 0, "columnheaderStyle");
+		summaryFlexTable.getCellFormatter().addStyleName(0, 1, "columnheaderStyle");
+		summaryFlexTable.getCellFormatter().addStyleName(0, 2, "columnheaderStyle");
+		summaryFlexTable.getCellFormatter().addStyleName(0, 3, "columnheaderStyle");
+		
+		for(int i = 0; i <= 10; i++){
+			
+				summaryFlexTable.getCellFormatter().setWidth(i, 1, "150px");
+				summaryFlexTable.getCellFormatter().setWidth(i, 2, "150px");
+				summaryFlexTable.getCellFormatter().setWidth(i, 3, "150px");
+			
+		}
 		
 		Grid grid1 = new Grid(1,2);
 		Grid grid2 = new Grid(1,2);
 		Grid grid3 = new Grid(1,2);
 		
-		grid1.setWidget(0,0, new Label ("N"));
-		grid1.setWidget(0,1, new Label ("%"));
-		grid2.setWidget(0,0, new Label ("N"));
-		grid2.setWidget(0,1, new Label ("%"));
-		grid3.setWidget(0,0, new Label ("N"));
-		grid3.setWidget(0,1, new Label ("%"));
+		grid1.setText(0,0, "N");
+		grid1.setText(0,1, "%");
+		grid2.setText(0,0, "N");
+		grid2.setText(0,1, "%");
+		grid3.setText(0,0, "N");
+		grid3.setText(0,1, "%");
 		
 		summaryFlexTable.setWidget(1,1, grid1);
 		summaryFlexTable.setWidget(1,2, grid2);
 		summaryFlexTable.setWidget(1,3, grid3);
 		
-		summaryFlexTable.setWidget(2,0, new Label("Screened"));
-		summaryFlexTable.setWidget(3,0, new Label("Presumptive TB + High Risk"));
-		summaryFlexTable.setWidget(4,0, new Label("Able to Produce Sputum"));
-		summaryFlexTable.setWidget(5,0, new Label("Sputum Results"));
-		summaryFlexTable.setWidget(6,0, new Label("Positive"));
-		summaryFlexTable.setWidget(7,0, new Label("Negative"));
-		summaryFlexTable.setWidget(8,0, new Label("Error/Rejected"));
-		summaryFlexTable.setWidget(9,0, new Label("No Result/Missing"));
-		summaryFlexTable.setWidget(10,0, new Label("Initiated on Treatment"));
+		grid1.getCellFormatter().addStyleName(0, 0, "gridStyle");
+		grid2.getCellFormatter().addStyleName(0, 0, "gridStyle");
+		grid3.getCellFormatter().addStyleName(0, 0, "gridStyle");
+		
+		grid1.getCellFormatter().addStyleName(0, 1, "gridStyle");
+		grid2.getCellFormatter().addStyleName(0, 1, "gridStyle");
+		grid3.getCellFormatter().addStyleName(0, 1, "gridStyle");
+		
+		summaryFlexTable.setText(2,0, "Screened");
+		summaryFlexTable.setText(3,0, "Presumptive TB + High Risk");
+		summaryFlexTable.setText(4,0, "Able to Produce Sputum");
+		summaryFlexTable.setText(5,0, "Sputum Results");
+		summaryFlexTable.setText(6,0, "Positive");
+		summaryFlexTable.setText(7,0, "Negative");
+		summaryFlexTable.setText(8,0, "Error/Rejected");
+		summaryFlexTable.setText(9,0, "No Result/Missing");
+		summaryFlexTable.setText(10,0, "Initiated on Treatment");
 		
 		summaryFlexTable.setWidget(2,1, screenedUguGrid);
 		summaryFlexTable.setWidget(3,1, suspectUguGrid);
@@ -339,7 +359,34 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		summaryFlexTable.setWidget(9,3, noResultTotalGrid);
 		summaryFlexTable.setWidget(10,3, treatmentInitiatedTotalGrid);
 		
-		summaryFlexTable.setCellSpacing(5);
+		Grid[] gridsArray = new Grid[]{grid1, grid2, grid3, 
+				screenedUguGrid, screenedeThekwiniGrid, screenedTotalGrid, suspectUguGrid, suspecteThekwiniGrid, suspectTotalGrid,
+				sputumSubmittedUguGrid, sputumSubmittedeThekwiniGrid, sputumSubmittedTotalGrid, sputumResultUguGrid, sputumResulteThekwiniGrid, sputumResultTotalGrid,
+				positiveResultUguGrid, positiveResulteThekwiniGrid, positiveResultTotalGrid, negativeResultUguGrid, negativeResulteThekwiniGrid, negativeResultTotalGrid,
+				errorResultUguGrid, errorResulteThekwiniGrid, errorResultTotalGrid, noResultUguGrid, noResulteThekwiniGrid, noResultTotalGrid,
+				treatmentInitiatedUguGrid, treatmentInitiatedeThekwiniGrid, treatmentInitiatedTotalGrid};
+		
+		for(Grid grid: gridsArray){
+			
+			grid.getCellFormatter().addStyleName(0, 0, "gridNumberStyle");
+			grid.getCellFormatter().addStyleName(0, 1, "gridPercentageStyle");
+		}
+		
+		for(int i = 1; i <= 10; i++){
+			
+			if((i & 1) == 0 ){
+				summaryFlexTable.getCellFormatter().addStyleName(i, 0, "evenColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 1, "evenColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 2, "evenColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 3, "evenColumnStyle");
+			}
+			else{
+				summaryFlexTable.getCellFormatter().addStyleName(i, 0, "oddColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 1, "oddColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 2, "oddColumnStyle");
+				summaryFlexTable.getCellFormatter().addStyleName(i, 3, "oddColumnStyle");
+			}
+		}
 		
 		reportsList.setWidth("300px");
 		fillLists();
@@ -347,6 +394,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		loginButton.addClickHandler(this);
 		showButton.addClickHandler(this);
 		clearButton.addClickHandler(this);
+		detailedReports.addClickHandler(this);
 		passwordTextBox.addKeyPressHandler(new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent event) {
 				boolean enterPressed = event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER;
@@ -357,6 +405,8 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		});
 		timeDimensionList.addChangeHandler(this);
 		createDateFilterWidgets(TimeDimenstion.YEAR);
+		
+		login();
 	}
 	
 	public void createDateFilterWidgets(TimeDimenstion time) {
@@ -384,7 +434,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			default:
 		}
 		
-		login();
+		openDashboard();
 		
 	}
 
@@ -426,7 +476,13 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		
 		chartHeaderPanel.clear();
 		
-		Label headingLabel = new Label(MineTBClient.get(reportsList).toUpperCase() + " by " + MineTBClient.get(locationDimensionList) + " per " + MineTBClient.get(timeDimensionList)); 
+		String report = MineTBClient.get(reportsList);
+		String time = MineTBClient.get(timeDimensionList).toLowerCase();
+		String loc = MineTBClient.get(locationDimensionList).toLowerCase();
+		
+		String labelText = Character.toUpperCase(report.charAt(0)) + report.substring(1) + " by " + Character.toUpperCase(loc.charAt(0)) + loc.substring(1) + " per " + Character.toUpperCase(time.charAt(0)) + time.substring(1);
+		
+		Label headingLabel = new Label(labelText); 
 		chartHeaderPanel.add(headingLabel);
 		
 		headingLabel.setStyleName("ReportHeader");
@@ -435,7 +491,6 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		
 		chartPanel.clear();
 		
-		String report = MineTBClient.get(reportsList);
 		if (report.equals("Screening")) {
 			drawScreening();
 		}
@@ -450,13 +505,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		}
 		else if (report.equals("Treatment Initiated")){
 			drawTreatmentInitiated();
-		}/*
-		else if (report.equals("Treatment Not Initiated Reasons")){
-			drawTreatmentNotInitiated();
 		}
-		else if (report.equals("Followup Smear Results")){
-			drawFollowupSmearResults();
-		}*/
 		else if (report.equals("Treatment Outcome Results")){
 			drawTreatmentOutcomeResults();
 		}
@@ -756,10 +805,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
+					
 					String yLabel = "Screened";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Screened"));
-					
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Screened" , xLabel + "ly" + yearString));
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
 					// Draw a line break
@@ -773,6 +828,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					// Draw a line break
 					chartPanel.add(thirdLine);
 					
+					timeArray = getTimeArray();
 					for(String loc: locations){
 						
 						Number[] data = getColumnData(result, timeArray,loc,3);
@@ -781,9 +837,9 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						dataList.add(yAxisData);
 						
 					}
-					yLabel = "Presumptive";							
+					yLabel = "Presumptive and High Risk";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Presumptives"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Presumptives and High Risk" , xLabel + "ly" + yearString));
 					
 					HTML fourthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourthLine);
@@ -807,7 +863,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					
 					yLabel = "Non-Suspect";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Non-Suspects"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Non-Suspects", xLabel + "ly" + yearString));
 						
 					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixthLine);
@@ -940,9 +996,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
+					
 					String yLabel = "Sputum Submissions";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList, "Total Sputum Submissions"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(timeArray, xLabel, yLabel, dataList, "Total Sputum Submissions" , xLabel + "ly" + yearString));
 					
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -1078,9 +1141,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
+					
 					String yLabel = "GeneXpert Results";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Number of Results Received"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Number of Results Received" , xLabel + "ly" + yearString));
 					
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -1095,6 +1165,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					// Draw a line break
 					chartPanel.add(thirdLine);
 					
+					timeArray = getTimeArray();
 					for(String loc: locations){
 						
 						Number[] data = getColumnData(result, timeArray,loc,3);
@@ -1105,7 +1176,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "All Cases Detected"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "All Cases Detected" , xLabel + "ly" + yearString));
 					
 					HTML fourthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourthLine);
@@ -1128,7 +1199,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "RIF Resistant Cases Detected"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "RIF Resistant Cases Detected" , xLabel + "ly" + yearString));
 						
 					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixthLine);
@@ -1271,9 +1342,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
+					
 					String yLabel = "GeneXpert Results";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Number of Results Received"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Number of Results Received" , xLabel + "ly" + yearString));
 					
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -1288,6 +1366,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					// Draw a line break
 					chartPanel.add(thirdLine);
 					
+					timeArray = getTimeArray();
 					for(String loc: locations){
 						
 						Number[] data = getColumnData(result, timeArray,loc,3);
@@ -1298,7 +1377,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "All Cases Detected"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "All Cases Detected" , xLabel + "ly" + yearString));
 					
 					HTML fourthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourthLine);
@@ -1321,7 +1400,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "MTB Negative"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "MTB Negative" , xLabel + "ly" + yearString));
 						
 					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixthLine);
@@ -1344,7 +1423,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Unsuccessful"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Unsuccessful" , xLabel + "ly" + yearString));
 						
 					HTML eightLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(eightLine);
@@ -1367,7 +1446,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Leaked"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Leaked" , xLabel + "ly" + yearString));
 						
 					HTML tenthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(tenthLine);
@@ -1390,7 +1469,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Insufficient Quantity"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Insufficient Quantity" , xLabel + "ly" + yearString));
 						
 					HTML twelevethLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twelevethLine);
@@ -1413,7 +1492,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Incorrect Paperwork"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Incorrect Paperwork" , xLabel + "ly" + yearString));
 						
 					HTML fourteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourteenLine);
@@ -1436,7 +1515,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Rejected"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Rejected" , xLabel + "ly" + yearString));
 						
 					HTML sixteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixteenLine);
@@ -1459,7 +1538,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Error"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Error" , xLabel + "ly" + yearString));
 						
 					HTML eighteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(eighteenLine);
@@ -1482,7 +1561,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Invalid"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Invalid" , xLabel + "ly" + yearString));
 						
 					HTML twentyLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twentyLine);
@@ -1505,7 +1584,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "No Result"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "No Result" , xLabel + "ly" + yearString));
 						
 					HTML twentyTwoLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twentyTwoLine);
@@ -1528,7 +1607,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Others"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Others" , xLabel + "ly" + yearString));
 						
 					HTML twentyFourLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twentyFourLine);
@@ -1668,11 +1747,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
-					System.out.println(xLabel);
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
 					
 					String yLabel = "Number of Patients";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Treatments Initiated"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Treatments Initiated" , xLabel + "ly" + yearString));
 					
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -1687,6 +1771,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					// Draw a line break
 					chartPanel.add(fifthLine);
 					
+					timeArray = getTimeArray();
 					for(String loc: locations){
 						
 						Number[] data = getColumnData(result, timeArray,loc,4);
@@ -1697,7 +1782,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Transferred Out"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Transferred Out" , xLabel + "ly" + yearString));
 						
 					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixthLine);
@@ -1720,7 +1805,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Treatment Not Initiated"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Total Treatment Not Initiated" , xLabel + "ly" + yearString));
 						
 					HTML eightLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(eightLine);
@@ -1743,7 +1828,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Refused Treatment"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Refused Treatment" , xLabel + "ly" + yearString));
 						
 					HTML tenthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(tenthLine);
@@ -1766,7 +1851,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Couldn't Found Patient from Home Visit"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Couldn't Found Patient from Home Visit" , xLabel + "ly" + yearString));
 						
 					HTML twelevethLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twelevethLine);
@@ -1789,7 +1874,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Clinic Didn't Have Address or Phone Number"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Clinic Didn't Have Address or Phone Number" , xLabel + "ly" + yearString));
 						
 					HTML fourteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourteenLine);
@@ -1812,7 +1897,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Died"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Died" , xLabel + "ly" + yearString));
 						
 					HTML sixteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixteenLine);
@@ -1835,7 +1920,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Already on Treatment"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Already on Treatment" , xLabel + "ly" + yearString));
 						
 					HTML eighteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(eighteenLine);
@@ -2053,11 +2138,16 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 						}
 					}
 					
-					System.out.println(xLabel);
+					String yearString = "";
+					
+					if(time.equalsIgnoreCase("year"))
+						yearString = " (" + MineTBClient.get(yearFrom) + " - " + MineTBClient.get(yearTo) + ")";
+					else
+						yearString = " ("+ MineTBClient.get(yearFrom) +")";
 					
 					String yLabel = "Number of Patients";							
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Cured"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Cured" , xLabel + "ly" + yearString));
 					
 					
 					HTML secondLine = new HTML("<hr  style=\"width:100%;\" />");
@@ -2082,7 +2172,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Completed"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Completed" , xLabel + "ly" + yearString));
 						
 					HTML sixthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(sixthLine);
@@ -2095,6 +2185,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					// Draw a line break
 					chartPanel.add(seventhLine);
 					
+					timeArray = getTimeArray();
 					for(String loc: locations){
 						
 						Number[] data = getColumnData(result, timeArray,loc,4);
@@ -2105,7 +2196,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Default"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Default" , xLabel + "ly" + yearString));
 						
 					HTML eightLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(eightLine);
@@ -2128,7 +2219,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Failure"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Treatment Failure" , xLabel + "ly" + yearString));
 						
 					HTML tenthLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(tenthLine);
@@ -2151,7 +2242,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Death"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Death" , xLabel + "ly" + yearString));
 						
 					HTML twelevethLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(twelevethLine);
@@ -2174,7 +2265,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					}
 					
 					// Add Chart
-					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Transferred Out"));
+					chartPanel.add(MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, "Patient Transferred Out" , xLabel + "ly" + yearString));
 						
 					HTML fourteenLine = new HTML("<hr  style=\"width:100%;\" />");
 					chartPanel.add(fourteenLine);
@@ -2735,9 +2826,7 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		}
 	}
 	
-	private ArrayList<String[][]> getSummaryData(){
-		
-		final ArrayList<String[][]> list = new ArrayList<String[][]>();
+	private void getSummaryData(){
 		
 		String query = "Select "
 						+ "IFNULL(SUM(case when ( screening.district = 'Ugu') then screening.screened else 0 end),0), "
@@ -2751,8 +2840,210 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
 				@Override
 				public void onSuccess(final String[][] result) {
-				
-					list.add(result);
+					
+					int screenedUguString = getNumber(result[0][0]);
+					screenedUguGrid.setText(0, 0, String.valueOf(screenedUguString));
+					
+					int screenedeThekwiniString =  getNumber(result[0][1]);
+					screenedeThekwiniGrid.setText(0, 0, String.valueOf(screenedeThekwiniString));
+					
+					int screenedTotalString = getNumber(result[0][2]);
+					screenedTotalGrid.setText(0, 0, String.valueOf(screenedTotalString));
+					
+					int suspectUguString = getNumber(result[0][3]);
+					suspectUguGrid.setText(0, 0, String.valueOf(suspectUguString));
+					
+					int suspecteThekwiniString = getNumber(result[0][4]);
+					suspecteThekwiniGrid.setText(0, 0, String.valueOf(suspecteThekwiniString));
+					
+					int suspectTotalString = getNumber(result[0][5]);
+					suspectTotalGrid.setText(0, 0, String.valueOf(suspectTotalString));
+					
+					float percentage;
+					int per;
+					
+					percentage = (float) (suspectUguString * 100) / screenedUguString;
+					per = (int) Math.round(percentage);
+					suspectUguGrid.setText(0, 1, per+"%");
+					
+					percentage = (float) (suspecteThekwiniString * 100) / screenedeThekwiniString;
+					per = (int) Math.round(percentage);
+					suspecteThekwiniGrid.setText(0, 1, per+"%");
+					
+					percentage = (float) (suspectTotalString * 100) / screenedTotalString;
+					per = (int) Math.round(percentage);
+					suspectTotalGrid.setText(0, 1, per+"%");
+					
+					String query = "select "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.accepted_submissions else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.accepted_submissions else 0 end),0), "
+							+ "SUM(sputum_result.accepted_submissions), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.total_results else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.total_results else 0 end),0), "
+							+ "SUM(sputum_result.total_results), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.mtb_positives else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.mtb_positives else 0 end),0), "
+							+ "SUM(sputum_result.mtb_positives), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.mtb_negatives else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.mtb_negatives else 0 end),0), "
+							+ "SUM(sputum_result.mtb_negatives), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then (sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected) else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then (sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected) else 0 end),0), "
+							+ "SUM(sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.no_results else 0 end),0), "
+							+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.no_results else 0 end),0), "
+					+ "SUM(sputum_result.no_results) "
+					+ "from fact_sputumresults as sputum_result;";
+					try {
+						service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+							@Override
+							public void onSuccess(final String[][] result) {
+						
+								int sputumSubmittedUguString = getNumber(result[0][0]);
+								sputumSubmittedUguGrid.setText(0, 0, String.valueOf(sputumSubmittedUguString));
+								
+								int sputumSubmittedeThekwiniString =  getNumber(result[0][1]);
+								sputumSubmittedeThekwiniGrid.setText(0, 0, String.valueOf(sputumSubmittedeThekwiniString));
+								
+								int sputumSubmittedTotalString = getNumber(result[0][2]);
+								sputumSubmittedTotalGrid.setText(0, 0, String.valueOf(sputumSubmittedTotalString));
+								
+								int suspectUguString = getNumber(suspectUguGrid.getText(0, 0));
+								int suspecteThekwiniString = getNumber(suspecteThekwiniGrid.getText(0, 0));
+								int suspectTotalString = getNumber(suspectTotalGrid.getText(0, 0));
+								
+								float percentage;
+								int per;
+								
+								percentage = (float) (sputumSubmittedUguString * 100) / suspectUguString;
+								per = (int) Math.round(percentage);
+								sputumSubmittedUguGrid.setText(0, 1, per+"%");
+								
+								percentage = (float) (sputumSubmittedeThekwiniString * 100) / suspecteThekwiniString;
+								per = (int) Math.round(percentage);
+								sputumSubmittedeThekwiniGrid.setText(0, 1, per+"%");
+								
+								percentage = (float) (sputumSubmittedTotalString * 100) / suspectTotalString;
+								per = (int) Math.round(percentage);
+								sputumSubmittedTotalGrid.setText(0, 1, per+"%");
+								
+								int sputumResultUguString = getNumber(result[0][3]);
+								sputumResultUguGrid.setText(0, 0, String.valueOf(sputumResultUguString));
+								
+								int sputumResulteThekwiniString =  getNumber(result[0][4]);
+								sputumResulteThekwiniGrid.setText(0, 0, String.valueOf(sputumResulteThekwiniString));
+								
+								int sputumResultTotalString = getNumber(result[0][5]);
+								sputumResultTotalGrid.setText(0, 0, String.valueOf(sputumResultTotalString));
+								
+								int positiveResultUguString = getNumber(result[0][6]);
+								positiveResultUguGrid.setText(0, 0, String.valueOf(positiveResultUguString));
+								
+								int positiveResulteThekwiniString =  getNumber(result[0][7]);
+								positiveResulteThekwiniGrid.setText(0, 0, String.valueOf(positiveResulteThekwiniString));
+								
+								int positiveResultTotalString = getNumber(result[0][8]);
+								positiveResultTotalGrid.setText(0, 0, String.valueOf(positiveResultTotalString));
+								
+								percentage = (float) (positiveResultUguString * 100) / sputumResultUguString;
+								per = (int) Math.round(percentage);
+								positiveResultUguGrid.setText(0, 1, per+"%");
+								
+								percentage = (float) (positiveResulteThekwiniString * 100) / sputumResulteThekwiniString;
+								per = (int) Math.round(percentage);
+								positiveResulteThekwiniGrid.setText(0, 1, per+"%");
+								
+								percentage = (float) (positiveResultTotalString * 100) / sputumResultTotalString;
+								per = (int) Math.round(percentage);
+								positiveResultTotalGrid.setText(0, 1, per+"%");
+								
+								int negativeResultUguString = getNumber(result[0][9]);
+								negativeResultUguGrid.setText(0, 0, String.valueOf(negativeResultUguString));
+								
+								int negativeResulteThekwiniString =  getNumber(result[0][10]);
+								negativeResulteThekwiniGrid.setText(0, 0, String.valueOf(negativeResulteThekwiniString));
+								
+								int negativeResultTotalString = getNumber(result[0][11]);
+								negativeResultTotalGrid.setText(0, 0, String.valueOf(negativeResultTotalString));
+								
+								int errorResultUguString = getNumber(result[0][12]);
+								errorResultUguGrid.setText(0, 0, String.valueOf(errorResultUguString));
+								
+								int errorResulteThekwiniString =  getNumber(result[0][13]);
+								errorResulteThekwiniGrid.setText(0, 0, String.valueOf(errorResulteThekwiniString));
+								
+								int errorResultTotalString = getNumber(result[0][14]);
+								errorResultTotalGrid.setText(0, 0, String.valueOf(errorResultTotalString));
+								
+								int noResultUguString = getNumber(result[0][15]);
+								noResultUguGrid.setText(0, 0, String.valueOf(noResultUguString));
+								
+								int noResulteThekwiniString =  getNumber(result[0][16]);
+								noResulteThekwiniGrid.setText(0, 0, String.valueOf(noResulteThekwiniString));
+								
+								int noResultTotalString = getNumber(result[0][17]);
+								noResultTotalGrid.setText(0, 0, String.valueOf(noResultTotalString));
+								
+								String query = "Select "
+										+ "IFNULL(SUM(case when ( treatment.district = 'Ugu') then treatment.tx_initiated else 0 end),0), "
+										+ "IFNULL(SUM(case when ( treatment.district = 'eThekwini') then treatment.tx_initiated else 0 end),0), "
+										+ "SUM(treatment.tx_initiated) "
+								 + "from fact_treatment as treatment;";
+							
+								try {
+									service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+										@Override
+										public void onSuccess(final String[][] result) {
+										
+											int treatmentInitiatedUguString = getNumber(result[0][0]);
+											treatmentInitiatedUguGrid.setText(0, 0, String.valueOf(treatmentInitiatedUguString));
+											
+											int treatmentInitiatedeThekwiniString =  getNumber(result[0][1]);
+											treatmentInitiatedeThekwiniGrid.setText(0, 0, String.valueOf(treatmentInitiatedeThekwiniString));
+											
+											int treatmentInitiatedTotalString = getNumber(result[0][2]);
+											treatmentInitiatedTotalGrid.setText(0, 0, String.valueOf(treatmentInitiatedTotalString));
+																
+											int positiveResultUguString = getNumber(positiveResultUguGrid.getText(0, 0));
+											int positiveResulteThekwiniString = getNumber(positiveResulteThekwiniGrid.getText(0, 0));
+											int positiveResultTotalString = getNumber(positiveResultTotalGrid.getText(0, 0));
+											
+											float percentage;
+											int per;
+											
+											percentage = (float) (treatmentInitiatedUguString * 100) / positiveResultUguString;
+											per = (int) Math.round(percentage);
+											treatmentInitiatedUguGrid.setText(0, 1, per+"%");
+											
+											percentage = (float) (treatmentInitiatedeThekwiniString * 100) / positiveResulteThekwiniString;
+											per = (int) Math.round(percentage);
+											treatmentInitiatedeThekwiniGrid.setText(0, 1, per+"%");
+											
+											percentage = (float) (treatmentInitiatedTotalString * 100) / positiveResultTotalString;
+											per = (int) Math.round(percentage);
+											treatmentInitiatedTotalGrid.setText(0, 1, per+"%");
+											
+										}
+										
+										@Override
+										public void onFailure(Throwable caught) {
+											Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+										}
+									});
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							
+							}
+						
+							@Override
+							public void onFailure(Throwable caught) {
+								Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+							}
+						});
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					
 				}
 				
@@ -2760,74 +3051,13 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 				public void onFailure(Throwable caught) {
 					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
 				}
-			});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		query = "select "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.accepted_submissions else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.accepted_submissions else 0 end),0), "
-					+ "SUM(sputum_result.accepted_submissions), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.mtb_positives else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.mtb_positives else 0 end),0), "
-					+ "SUM(sputum_result.mtb_positives), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.mtb_negatives else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.mtb_negatives else 0 end),0), "
-					+ "SUM(sputum_result.mtb_negatives), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.mtb_negatives else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.mtb_negatives else 0 end),0), "
-					+ "SUM(sputum_result.mtb_negatives), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then (sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected) else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then (sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected) else 0 end),0), "
-					+ "SUM(sputum_result.errors + sputum_result.invalid + sputum_result.unsuccessful + sputum_result.leaked + sputum_result.insufficient_quantity + sputum_result.others + sputum_result.incorrect_paperwork + sputum_result.rejected), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'Ugu') then sputum_result.no_results else 0 end),0), "
-					+ "IFNULL(SUM(case when ( sputum_result.district = 'eThekwini') then sputum_result.no_results else 0 end),0), "
-			+ "SUM(sputum_result.no_results) "
-			+ "from fact_sputumresults as sputum_result;";
-		try {
-			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
-				@Override
-				public void onSuccess(final String[][] result) {
 				
-					list.add(result);
-					
-				}
-				
-				@Override
-				public void onFailure(Throwable caught) {
-					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
-				}
-			});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		query = "Select "
-					+ "IFNULL(SUM(case when ( treatment.district = 'Ugu') then treatment.tx_initiated else 0 end),0), "
-					+ "IFNULL(SUM(case when ( treatment.district = 'eThekwini') then treatment.tx_initiated else 0 end),0), "
-					+ "SUM(treatment.tx_initiated) "
-			 + "from fact_treatment as treatment;";
-		
-		try {
-			service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
-				@Override
-				public void onSuccess(final String[][] result) {
-				
-					list.add(result);
-					
-				}
-				
-				@Override
-				public void onFailure(Throwable caught) {
-					Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
-				}
 			});
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return list;
+		load(false);
 	}
 
 	/**
@@ -2859,35 +3089,11 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					
 					verticalPanel.clear();
 					
-					//verticalPanel.add(reportingOptionsLabel);
-					//verticalPanel.add(optionsTable);
-					
-					/*HorizontalPanel buttonsPanel = new HorizontalPanel();
-					buttonsPanel.add(showButton);
-					buttonsPanel.add(clearButton);
-					buttonsPanel.setSpacing(5);
-					verticalPanel.add(buttonsPanel);*/
-					
-					/*ArrayList<String[][]> list = new ArrayList<String[][]>();
-					list = getSummaryData();
-					
-					String[][] screenedData = list.get(0);
-					String[][] sputumResultData = list.get(1);
-					String[][] treatmentData = list.get(2);*/
-					
-					/*screenedUguGrid.setWidget(0, 0, new Label (screenedData[0][0]));
-					suspectUguGrid.setWidget(0, 1, new Label (screenedData[0][1]));
-					screenedeThekwiniGrid.setWidget(0, 0, new Label (screenedData[0][2]));
-					screenedeThekwiniGrid.setWidget(0, 1, new Label (screenedData[0][3]));
-					screenedTotalGrid.setWidget(0, 0, new Label (screenedData[0][4]));
-					screenedTotalGrid.setWidget(0, 1, new Label (screenedData[0][5]));*/
-					
-					screenedUguGrid.setWidget(0, 0, new Label ("233"));
-					screenedeThekwiniGrid.setWidget(0, 0, new Label ("233"));
-					screenedTotalGrid.setWidget(0, 0, new Label ("233"));
-
+					getSummaryData();
+				
 					verticalPanel.add(summaryLabel);
 					verticalPanel.add(summaryFlexTable);
+					verticalPanel.add(detailedReports);
 					
 					Grid grid = new Grid(1,2);
 					verticalPanel.add(grid);
@@ -2905,6 +3111,96 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 					verticalPanel.add(line);
 					
 					chartPanel.setVisible(false);
+					userPanel.setVisible(true);
+					footerPanel.setVisible(false);
+					userLoggedInLabel.setText(userName);
+					
+					String query = "SELECT * FROM minetb_dw.meta_data where tag = 'last_updated';";
+					try {
+						service.getTableData(query.toString(), new AsyncCallback<String[][]>() {
+							@Override
+							public void onSuccess(final String[][] result) {
+							
+								dateLabel.setText(result[0][1]);
+								
+							}
+							
+							@Override
+							public void onFailure(Throwable caught) {
+								Window.alert(CustomMessage.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+							}
+						});
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					
+					load(false);
+				}
+
+				public void onFailure(Throwable caught) {
+					caught.printStackTrace();
+					load(false);
+				}
+			});
+		} catch (Exception e) {
+			loginFlexTable.setVisible(true);
+			load(false);
+		}
+	}
+	
+	private void openDashboard() {
+		final String userName;
+		String passCode;
+		String password;
+		String sessionLimit;
+		try {
+			// Try to get Cookies
+			userName = Cookies.getCookie("UserName");
+			passCode = Cookies.getCookie("Pass");
+			password = Cookies.getCookie("Password");
+			sessionLimit = Cookies.getCookie("SessionLimit");
+			if (userName == null || passCode == null || sessionLimit == null)
+				throw new Exception();
+			userTextBox.setText(userName);
+
+			// If session is expired then renew
+			if (new Date().getTime() > Long.parseLong(sessionLimit))
+				if (!renewSession())
+					throw new Exception();
+			setCookies(userName, passCode, password);
+			service.setCurrentUser(userName, new AsyncCallback<Void>() {
+				public void onSuccess(Void result) {
+					
+					verticalPanel.clear();
+					
+					verticalPanel.add(backLabel);
+					backLabel.setHorizontalAlignment(HorizontalPanel.ALIGN_LEFT);
+					verticalPanel.add(reportingOptionsLabel);
+					verticalPanel.add(optionsTable);
+					
+					HorizontalPanel buttonsPanel = new HorizontalPanel();
+					buttonsPanel.add(showButton);
+					buttonsPanel.add(clearButton);
+					buttonsPanel.setSpacing(5);
+					verticalPanel.add(buttonsPanel);
+					
+					Grid grid = new Grid(1,2);
+					verticalPanel.add(grid);
+					
+					Label lastUpdatedLabel = new Label("Last updated on: ");
+					grid.setWidget(0,0, lastUpdatedLabel);
+					lastUpdatedLabel.setStyleName("orange-text");
+					final Label dateLabel = new Label();
+					grid.setWidget(0,1, dateLabel);
+					dateLabel.setStyleName("bold-orange-text");
+					
+					grid.getElement().setAttribute("align", "right");
+					
+					HTML line = new HTML("<hr  style=\"width:100%;\" /> <br> ");
+					verticalPanel.add(line);
+					
+					chartPanel.setVisible(true);
 					userPanel.setVisible(true);
 					footerPanel.setVisible(false);
 					userLoggedInLabel.setText(userName);
@@ -2975,7 +3271,14 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 			load(false);
 			chartPanel.clear();
 			chartHeaderPanel.clear();
+		} else if (sender == detailedReports) {
+			openDashboard();
+		} else if (sender == backLabel) {
+			login();
+		} else if (sender == logoutLabel) {
+			logout();
 		}
+		
 	}
 
 	@Override
@@ -3065,5 +3368,17 @@ public class Minetbdashboard implements EntryPoint, ClickHandler,
 		timeArr = timeArray.toArray(timeArr);
 		
 		return timeArr;
+	}
+	
+	private int getNumber(String number){
+		
+		String temp = number;
+		if(number.contains(".")){
+			int i = number.indexOf(".");
+			temp = number.substring(0,i);
+		}
+		
+		return Integer.parseInt(temp);
+		
 	}
 }

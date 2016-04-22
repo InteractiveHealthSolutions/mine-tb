@@ -1,9 +1,11 @@
 html,
-body {}
+body {
+	
+}
 
 .MineTBHeader {
     font-size: 20px;
-	font-family: Garamond;
+	font-family: 'Open Sans';
 	font-weight: bolder;
 	text-align: center;
 	vertical-align: middle;
@@ -12,18 +14,17 @@ body {}
 
 .ReportHeader {
     font-size: 25px;
-	font-family: Garamond;
+	font-family: 'Open Sans';
 	font-weight: bolder;
 	text-align: center;
 	vertical-align: middle;
 	color: #9bc041;
 }
 
-
 .rootPanel{
 	margin: 5px;
-	font-family: Arial, sans-serif, Calibri;
-	background-color: #F0F0E0;
+	font-family: 'Open Sans';
+	background-color: white;
 }
 
 .gwt-Label {
@@ -38,7 +39,7 @@ margin: 10px 10px 10px 10px !important;
   border: none !important;
   border-bottom: solid 2px #c9c9c9 !important;
   transition: border 0.3s !important;
-  background-color: #F0F0E0 !important;
+  background-color: white !important;
   width: 180px !important;
   font-size: 15px !important;
 }
@@ -47,7 +48,7 @@ margin: 10px 10px 10px 10px !important;
   border: none !important;
   border-bottom: solid 2px #c9c9c9 !important;
   transition: border 0.3s !important;
-  background-color: #F0F0E0 !important;
+  background-color: white !important;
   width: 190px !important;
   font-size: 15px !important;
 }
@@ -57,7 +58,7 @@ margin: 10px 10px 10px 10px !important;
   -moz-border-radius: 28 !important;
   border-radius: 28px  !important;
   border-color: #9bc041 !important;
-  font-family: Courier New !important;
+  font-family: 'Open Sans' New !important;
   color: #ffffff !important;
   font-size: 15px !important;
   background: #9bc041 !important;
@@ -71,10 +72,6 @@ margin: 10px 10px 10px 10px !important;
   color: #9bc041 !important;
   border-color: #ffffff !important;
   text-decoration: none;
-}
-
-.ReportingFlexTable	{
-	
 }
 
 hr { 
@@ -99,6 +96,8 @@ hr {
     -moz-appearance: none;
     appearance: none;
    	border: solid 2px #c9c9c9;	
+   	padding-left: 5px;
+   	background-color: #E8E8E8;
 }
 
 .logout-button {
@@ -116,5 +115,39 @@ hr {
 .bold-orange-text{
 	color: #F58220;
 	font-weight: bold;
+}
+
+.columnheaderStyle
+{
+	background-color: #4973AB;
+	color: white;
+	font-weight: bold;
+	text-align: center;
+	padding: 5px;
+}
+
+.oddColumnStyle{
+	background-color: #BCD2EE;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.evenColumnStyle{
+	background-color: #CAE1FF;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.gridNumberStyle{
+	text-align: right;
+	width: 100px;
+	padding-right: 2px;
+}
+
+.gridPercentageStyle{
+	text-align: right;
+	width: 50px;
+	border-left: solid 2px white;
+	padding-right: 2px;
 }
 

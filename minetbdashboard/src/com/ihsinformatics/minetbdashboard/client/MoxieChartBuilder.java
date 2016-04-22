@@ -16,10 +16,13 @@ import java.util.ArrayList;
 
 import org.apache.taglibs.response.SetHeaderTag;
 import org.moxieapps.gwt.highcharts.client.*;  
+import org.moxieapps.gwt.highcharts.client.Button.Align;
+import org.moxieapps.gwt.highcharts.client.Legend.Layout;
 import org.moxieapps.gwt.highcharts.client.labels.*;  
 import org.moxieapps.gwt.highcharts.client.plotOptions.*; 
 
 import com.google.gwt.user.client.Window;
+import com.googlecode.gwt.charts.client.options.AxisTitlesPosition;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
 
@@ -31,38 +34,42 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
-	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle){
 		
 		if(dataList.size() > 10){
 			
-			Chart chart = createBarChart(timeArray,xLabel, yLabel, dataList, title);
+			Chart chart = createStackBarChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
 			return chart;
 			
 		}
 		
 		if(timeArray.length == 1){
 			
-			Chart chart = createColumnChart(timeArray,xLabel, yLabel, dataList, title);
+			Chart chart = createColumnChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
 			return chart;
 		}
 		
 		final Chart chart = new Chart()  
         .setType(Series.Type.LINE)  
-        .setMarginRight(130)  
         .setMarginBottom(25)  
         .setChartTitle(new ChartTitle()  
             .setText(title)  
-            .setX(-20)  // center  
+            .setX(-20)  // center 
+        )
+        .setChartSubtitle(new ChartSubtitle()  
+            .setText(subTitle)  
+            .setX(-20)  // center)
         )
         .setOption("/lang/numericSymbols", null)
         .setLegend(new Legend()  
-            .setLayout(Legend.Layout.VERTICAL)  
-            .setAlign(Legend.Align.RIGHT)  
-            .setVerticalAlign(Legend.VerticalAlign.TOP)  
-            .setX(-10)  
-            .setY(100)  
-            .setBorderWidth(0)  
-        )  
+                .setAlign(Legend.Align.RIGHT)  
+                .setVerticalAlign(Legend.VerticalAlign.BOTTOM)     
+                .setFloating(true)  
+                .setBackgroundColor("#FFFFFF")  
+                .setBorderColor("#CCC")  
+                .setBorderWidth(1)  
+                .setShadow(false)  
+            ) 
         .setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
@@ -99,7 +106,7 @@ public class MoxieChartBuilder {
     return chart;  
 	}
 	
-	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
 			
 			final Chart chart = new Chart()  
 	        .setType(Series.Type.COLUMN)  
@@ -107,6 +114,10 @@ public class MoxieChartBuilder {
 	        .setMarginBottom(25)  
 	        .setChartTitle(new ChartTitle()  
 	            .setText(title)  
+	            .setX(-20)  // center  
+	        )
+	        .setChartSubtitle(new ChartSubtitle()  
+	            .setText(subtitle)  
 	            .setX(-20)  // center  
 	        )
 	        .setOption("/lang/numericSymbols", null)
@@ -366,7 +377,6 @@ public class MoxieChartBuilder {
                     }  
                 })  
             )  
-            .setOption("/lang/numericSymbols", null)
             .setLegend(new Legend()  
 	            .setAlign(Legend.Align.RIGHT)  
 	            .setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
@@ -440,6 +450,89 @@ public class MoxieChartBuilder {
         
         return chart;  
     }  
+	
+	public static Chart createStackBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+			final Chart chart = new Chart()  
+	        .setType(Series.Type.BAR) 
+	        .setMarginBottom(25)  
+	        .setChartTitle(new ChartTitle()  
+	            .setText(title)  
+	            .setX(-20))  // center 
+	        .setChartSubtitle(new ChartSubtitle()  
+	            .setText(subtitle)  
+	            .setX(-20))  // center    
+	        .setSeriesPlotOptions(new SeriesPlotOptions()  
+	            .setStacking(PlotOptions.Stacking.NORMAL)  
+	        )  
+	         .setLegend(new Legend()  
+	            .setReversed(true) 
+	            .setShadow(false)
+	            .setTitleText(xLabel)
+	            .setAlign(Legend.Align.RIGHT)  
+	            .setVerticalAlign(Legend.VerticalAlign.MIDDLE) 
+	            .setLayout(Layout.VERTICAL)
+	            .setFloating(true)  
+	            .setBackgroundColor("#FFFFFF")  
+	            .setBorderColor("#CCC")  
+	            .setBorderWidth(1)  
+	            .setShadow(false) 
+            )
+            .setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<b>" + toolTipData.getXAsString() + "</b><br/>" +
+                       		  toolTipData.getSeriesName() +  " ("+xLabel+") : " + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );  
+	
+			String[] yData = new String[dataList.size()];
+			
+			for(int i=0; i < dataList.size(); i++){
+				
+				GraphData data = dataList.get(i);
+				yData[i] = data.getTitle();
+				
+			}
+			
+		    chart.getXAxis()  
+		        .setCategories(yData);  
+		
+		   chart.getYAxis() 
+		        .setAxisTitle(new AxisTitle()  
+            .setText(yLabel).setStyle(new Style().setFontSize("16px"))
+            )  ;
+
+		   ArrayList<Number[]> numberList = new ArrayList<Number[]>();
+		    
+		   for(int i=0; i<timeArray.length; i++){
+			   
+			   Number[] numberData = new Number[dataList.size()];
+			   
+			   for(int j=0; j<dataList.size(); j++){
+				   
+				   Number[] data = dataList.get(j).getData();
+				   numberData[j] = data[i];
+				   
+			   }
+			   
+			   numberList.add(numberData);
+		   }
+		    
+		   
+		   for (int i=timeArray.length-1; i>=0; i--) {
+	        	
+	        	 chart.addSeries(chart.createSeries()  
+	        	            .setName(timeArray[i])
+	        	            .setPoints(numberList.get(i))
+	        	        ); 
+	        	
+	        }
+		    chart.setExporting(new Exporting()
+		       .setOption("/buttons/contextButton/align", "left"));
+		       
+		    return chart;  
+	}
 	
 	public static Number getMaxValue(Number[] data){
 		
