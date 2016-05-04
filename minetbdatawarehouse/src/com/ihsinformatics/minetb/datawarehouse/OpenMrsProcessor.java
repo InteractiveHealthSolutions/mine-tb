@@ -258,7 +258,7 @@ public class OpenMrsProcessor extends AbstractProcessor {
 			String baseQuery = "select e.surrogate_id, e.system_id, e.encounter_id,  e.provider, e.location_id, l.location_name, e.patient_id, e.date_entered, "
 					+ groupConcat.toString()
 					+ "'' as BLANK "
-					+ "from dim_encounter as e inner join dim_obs as o on o.encounter_id = e.encounter_id inner join dim_location as l on l.location_id = e.location_id "
+					+ "from dim_encounter as e inner join dim_obs as o on o.encounter_id = e.encounter_id and o.voided = 0 inner join dim_location as l on l.location_id = e.location_id "
 					+ "where e.encounter_type = '"
 					+ encounterType[0].toString()
 					+ "' "

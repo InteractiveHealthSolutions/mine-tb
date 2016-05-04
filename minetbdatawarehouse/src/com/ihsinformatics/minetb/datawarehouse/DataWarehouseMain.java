@@ -221,22 +221,22 @@ public final class DataWarehouseMain {
 	 * Drops and recreates Data warehouse tables to hard reset
 	 */
 	public void resetDataWarehouse() {
-		log.info("Starting DW hard reset");
+		/*log.info("Starting DW hard reset");
 		Object[] tables = dwDb.getColumnData("information_schema.tables",
 				"table_name", "table_schema='" + dwSchema + "'");
 		for (Object t : tables) {
 			log.info("Deleting table " + t);
 			dwDb.deleteTable(t.toString());
 		}
-		extractLoad(true);
+		extractLoad(true);*/
 		createDimensions();
-		transform();
-		createFacts();
+		/*transform();
+		createFacts();*/
 		
-		String query = "update meta_data set value = now() where tag = 'last_updated';";
+		/*String query = "update meta_data set value = now() where tag = 'last_updated';";
 		dwDb.runCommand(CommandType.UPDATE, query.toString());
 		
-		log.info("Finished DW hard reset");
+		log.info("Finished DW hard reset");*/
 	}
 
 	public void extractLoad(boolean fromScratch) {
@@ -256,7 +256,7 @@ public final class DataWarehouseMain {
 	
 	public void createDimensions() {
 		log.info("Starting dimension modeling");
-		FileUtil fileUtil = new FileUtil();
+		/*FileUtil fileUtil = new FileUtil();
 		String[] queries = fileUtil.getLines("dimension_modeling.sql");
 		// Recreate tables
 		for (String query : queries) {
@@ -276,13 +276,13 @@ public final class DataWarehouseMain {
 				log.info(query);
 				dwDb.runCommand(CommandType.INSERT, query);
 			}
-		}
+		}*/
 		// Fill in datetime_dim table
 		Calendar start = Calendar.getInstance();
 		Calendar end = Calendar.getInstance();
 		start.set(Calendar.YEAR, 2000);
 		start.set(Calendar.MONTH, Calendar.JANUARY);
-		start.set(Calendar.DATE, 1);
+		start.set(Calendar.DATE, 2);
 		end.set(Calendar.HOUR, 0);
 		int i = 1;
 		while (start.getTime().before(end.getTime())) {
@@ -295,14 +295,16 @@ public final class DataWarehouseMain {
 			query.append("(" + (i++) + ", ");
 			query.append(startDate + ", ");
 			query.append(weekEndDate + ", ");
-			query.append("year(" + weekEndDate + "), ");
-			query.append("month(" + weekEndDate + "), ");
-			query.append("week(" + weekEndDate + ", 6), ");
-			query.append("ceil(month(" + weekEndDate + ") / 3), ");
-			query.append("monthname(" + weekEndDate + "));");
+			query.append("year(" + startDate + "), ");
+			query.append("month(" + startDate + "), ");
+			query.append("week(" + startDate + ", 6), ");
+			query.append("ceil(month(" + startDate + ") / 3), ");
+			query.append("monthname(" + startDate + "));");
 			dwDb.runCommand(CommandType.INSERT, query.toString());
+			
 			start.add(Calendar.DATE, 1);
 		}
+		
 		log.info("Finished dimension modeling");
 	}
 

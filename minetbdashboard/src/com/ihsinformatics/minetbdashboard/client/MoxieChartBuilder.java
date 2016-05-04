@@ -21,7 +21,9 @@ import org.moxieapps.gwt.highcharts.client.Legend.Layout;
 import org.moxieapps.gwt.highcharts.client.labels.*;  
 import org.moxieapps.gwt.highcharts.client.plotOptions.*; 
 
+import com.google.gwt.uibinder.elementparsers.CustomButtonParser;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.CustomButton;
 import com.googlecode.gwt.charts.client.options.AxisTitlesPosition;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
@@ -34,43 +36,65 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
+	
+	/**
+	 * Returns Line Chart 
+	 * 
+	 * @param timeArray - x-axis Data Array
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList  - GraphData Array List (YAxis Data)
+	 * @param title
+	 * @param subTitle
+	 * 
+	 * @return Chart
+	 */
 	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle){
 		
+		// if y-axis has more than 10 variable - Go for Stack Bar Chart
 		if(dataList.size() > 10){
 			
-			Chart chart = createStackBarChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
+			Chart chart = createHorizontalStackBarChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
 			return chart;
-			
 		}
 		
+		// If there's only one variable on x-axis - Go for Column Chart
 		if(timeArray.length == 1){
 			
 			Chart chart = createColumnChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
 			return chart;
 		}
 		
-		final Chart chart = new Chart()  
-        .setType(Series.Type.LINE)  
-        .setMarginBottom(25)  
-        .setChartTitle(new ChartTitle()  
-            .setText(title)  
-            .setX(-20)  // center 
-        )
-        .setChartSubtitle(new ChartSubtitle()  
-            .setText(subTitle)  
-            .setX(-20)  // center)
-        )
-        .setOption("/lang/numericSymbols", null)
-        .setLegend(new Legend()  
-                .setAlign(Legend.Align.RIGHT)  
-                .setVerticalAlign(Legend.VerticalAlign.BOTTOM)     
-                .setFloating(true)  
-                .setBackgroundColor("#FFFFFF")  
-                .setBorderColor("#CCC")  
-                .setBorderWidth(1)  
-                .setShadow(false)  
-            ) 
-        .setToolTip(new ToolTip()  
+		// Define LINE Chart
+		final Chart chart = new Chart();  
+        chart.setType(Series.Type.LINE);  
+        chart.setMarginBottom(25);
+        chart.setMarginRight(80);
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title)  
+            						.setX(-20)  // center 
+        					)
+        	 .setChartSubtitle(new ChartSubtitle()  
+            						.setText(subTitle)  
+            						.setX(-20)  // center
+        			 		   );
+        
+        // Set Legends positin and style 
+        chart.setLegend(new Legend()    
+                				.setAlign(Legend.Align.RIGHT)  
+                				.setVerticalAlign(Legend.VerticalAlign.MIDDLE)     
+                				.setFloating(true)  
+                				.setBackgroundColor("#FFFFFF")  
+                				.setBorderColor("#CCC")  
+                				.setBorderWidth(1)  
+                				.setShadow(false) 
+                				.setLayout(Layout.VERTICAL)
+        				); 
+        
+        // Set Tool Tip
+        chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
                     	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
@@ -79,165 +103,272 @@ public class MoxieChartBuilder {
                 })  
             );
 		
+        // Allow Whole Number only
+		chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
 		
-
-    chart.getXAxis()  
-    .setCategories(  
-    		timeArray 
-    ).setAxisTitle(new AxisTitle()  
-    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
-    );  
-
-
-	chart.getYAxis().setMin(0)
-	    .setAxisTitle(new AxisTitle()  
-	        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
-	);
+		// Define X-Axis
+	    chart.getXAxis()  
+	    	.setCategories(timeArray)    // set x-Axis Data - Number[]
+	    	.setAxisTitle(new AxisTitle()     // x-Axis Title & Value
+	    					.setText(xLabel)
+	    					.setStyle(new Style().setFontSize("16px"))  
+	    				 );  
 	
-    for (int i=0; i<dataList.size(); i++) {
-    	
-    	chart.addSeries(chart.createSeries()  
-    	        .setName(dataList.get(i).getTitle())  
-    	        .setPoints(dataList.get(i).getData() 
-    	        )  
-    	    );
-    } 
-
-    return chart;  
-	}
-	
-	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
-			
-			final Chart chart = new Chart()  
-	        .setType(Series.Type.COLUMN)  
-	        .setMarginRight(130)  
-	        .setMarginBottom(25)  
-	        .setChartTitle(new ChartTitle()  
-	            .setText(title)  
-	            .setX(-20)  // center  
-	        )
-	        .setChartSubtitle(new ChartSubtitle()  
-	            .setText(subtitle)  
-	            .setX(-20)  // center  
-	        )
-	        .setOption("/lang/numericSymbols", null)
-	        .setLegend(new Legend()  
-	            .setLayout(Legend.Layout.VERTICAL)  
-	            .setAlign(Legend.Align.RIGHT)  
-	            .setVerticalAlign(Legend.VerticalAlign.TOP)  
-	            .setX(-10)  
-	            .setY(100)  
-	            .setBorderWidth(0)  
-	        )  
-	        .setToolTip(new ToolTip()  
-	                .setFormatter(new ToolTipFormatter() {  
-	                    public String format(ToolTipData toolTipData) {  
-	                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-	                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
-	                    }  
-	                })  
-	            );
-			
-	
-			chart.getXAxis()  
-		    .setCategories(  
-		    		timeArray 
-		    ).setAxisTitle(new AxisTitle()  
-		    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
-		    );  
-
-
-			chart.getYAxis().setMin(0)
-			    .setAxisTitle(new AxisTitle()  
-			        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
-			);
-			
-		    for (int i=0; i<dataList.size(); i++) {
-		    	
-		    	chart.addSeries(chart.createSeries()  
-		    	        .setName(dataList.get(i).getTitle())  
-		    	        .setPoints(dataList.get(i).getData() 
-		    	        )  
-		    	    );
-		    } 
-
-		    return chart; 
-	}
-	
-	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title){
+	    // Define Y-Axis
+		chart.getYAxis()
+			 .setMin(0)  
+		     .setAxisTitle(new AxisTitle()    // y-Axis Title & Value
+		        			.setText(yLabel)
+		        			.setStyle(new Style().setFontSize("16px"))  
+		    		 	);
 		
-		final Chart chart = new Chart()  
-        .setType(Series.Type.BAR)  
-        .setMarginRight(130)  
-        .setMarginBottom(25)  
-        .setChartTitle(new ChartTitle()  
-            .setText(title)  
-            .setX(-20)  // center  
-        )
-        .setOption("/lang/numericSymbols", null)
-        .setLegend(new Legend()  
-            .setLayout(Legend.Layout.VERTICAL)  
-            .setAlign(Legend.Align.RIGHT)  
-            .setVerticalAlign(Legend.VerticalAlign.TOP)  
-            .setX(-10)  
-            .setY(100)  
-            .setBorderWidth(0)  
-        )  
-        .setToolTip(new ToolTip()  
-                .setFormatter(new ToolTipFormatter() {  
-                    public String format(ToolTipData toolTipData) {  
-                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
-                    }  
-                })  
-            );
-		
-
-		chart.getXAxis()  
-	    .setCategories(  
-	    		timeArray 
-	    ).setAxisTitle(new AxisTitle()  
-	    .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
-	    );  
-
-
-		chart.getYAxis().setMin(0)
-		    .setAxisTitle(new AxisTitle()  
-		        .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
-		);
-		
+		// Set Y-Values
 	    for (int i=0; i<dataList.size(); i++) {
 	    	
 	    	chart.addSeries(chart.createSeries()  
-	    	        .setName(dataList.get(i).getTitle())  
-	    	        .setPoints(dataList.get(i).getData() 
+	    	        				.setName(dataList.get(i).getTitle())    //  Series Title
+	    	        				.setPoints(dataList.get(i).getData())   //  Series Data in Number Array
+	    					);
+	    } 
+	
+	    // move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+	    
+	    return chart;  
+	}
+	
+	
+	/**
+	 * 
+	 * Returns Column Chart
+	 * 
+	 * @param timeArray
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList
+	 * @param title
+	 * @param subtitle
+	 * 
+	 * @return Chart
+	 */
+	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+			
+		// Define Column Chart
+		final Chart chart = new Chart(); 
+        chart.setType(Series.Type.COLUMN);  
+        chart.setMarginRight(130);  
+        chart.setMarginBottom(25);
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title)  
+            						.setX(-20)  // center  
+        					)
+        	.setChartSubtitle(new ChartSubtitle()  
+            						.setText(subtitle)  
+            						.setX(-20)  // center  
+        					);
+        
+        // Set Legend Position and Style
+        chart.setLegend(new Legend()  
+            					.setLayout(Legend.Layout.VERTICAL)  
+            					.setAlign(Legend.Align.RIGHT)  
+            					.setVerticalAlign(Legend.VerticalAlign.TOP)  
+            					.setX(-10)  
+            					.setY(100)  
+            					.setBorderWidth(0)  
+        				);
+        
+        // Set ToolTip
+        chart.setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );
+		
+        // Allow only whole number
+		chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
+		
+		// Define X-Axis
+		chart.getXAxis()  
+	    	 .setCategories(timeArray)    // set x-Axis Data - Number[]
+	    	 .setAxisTitle(new AxisTitle()    // x-Axis Title & Style
+	    	 						.setText(xLabel)
+	    	 						.setStyle(new Style().setFontSize("16px"))  
+	    			 	   );  
+
+		// Define Y-Axis
+		chart.getYAxis()
+			.setMin(0)
+		    .setAxisTitle(new AxisTitle()      // y-Axis Title & Style
+		        					.setText(yLabel)
+		        					.setStyle(new Style().setFontSize("16px"))  
+		    				);
+		
+		// set y-axis Data
+	    for (int i=0; i<dataList.size(); i++) {
+	    	
+	    	chart.addSeries(chart.createSeries()  
+	    	        .setName(dataList.get(i).getTitle())    // Set series name 
+	    	        .setPoints(dataList.get(i).getData()    // Set series data - Number[]
+	    	        )  
+	    	    );
+	    } 
+	    
+		// move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+
+	    return chart; 
+	}
+	
+	/**
+	 * 
+	 * Returns Bar Chart
+	 * 
+	 * @param timeArray
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList
+	 * @param title
+	 * @return
+	 */
+	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+		
+		// Define Bar Chart
+		final Chart chart = new Chart() ; 
+        chart.setType(Series.Type.BAR);  
+        chart.setMarginRight(130);  
+        chart.setMarginBottom(25);
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title)  
+            						.setX(-20)  // center  
+        					)
+        	.setChartSubtitle(new ChartSubtitle()  
+            						.setText(subtitle)  
+            						.setX(-20)  // center  
+        					);
+        
+        // Set Legend Position and Style
+        chart.setLegend(new Legend()  
+            					.setLayout(Legend.Layout.VERTICAL)  
+            					.setAlign(Legend.Align.RIGHT)  
+            					.setVerticalAlign(Legend.VerticalAlign.TOP)  
+            					.setX(-10)  
+            					.setY(100)  
+            					.setBorderWidth(0)  
+        					);
+        
+        // Set Tool Tip
+        chart.setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );
+		
+        // Allow whole numbers only
+		chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
+		
+		// Define X-Axis
+		chart.getXAxis()  
+	    	 .setCategories(timeArray)     // set x-axis data - Number[]
+	    	 .setAxisTitle(new AxisTitle()  // set x-axis title & style
+	    	 						.setText(xLabel)
+	    	 						.setStyle(new Style().setFontSize("16px"))  
+	    			 		);  
+
+        // Define Y-Axis
+		chart.getYAxis()
+			 .setMin(0)
+		     .setAxisTitle(new AxisTitle()  // set y-axis title & style
+		        					.setText(yLabel)
+		        					.setStyle(new Style().setFontSize("16px"))  
+		    		 		);
+		
+		// set y-axis data 
+	    for (int i=0; i<dataList.size(); i++) {
+	    	
+	    	chart.addSeries(chart.createSeries()  
+	    	        .setName(dataList.get(i).getTitle())   // set series name
+	    	        .setPoints(dataList.get(i).getData() 	// set series data - Number[]
 	    	        )  
 	    	    );
 	    } 
 
+	    // move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+	    
 	    return chart; 
-}
+	}
 	
+	/**
+	 * returns combination chart (stack chart + line chart)
+	 * 
+	 * @param timeData
+	 * @param primaryData
+	 * @param secondaryData
+	 * @param lineData
+	 * @param title
+	 * @param loc
+	 * @param time
+	 * @param yLabel
+	 * @param lineLabel
+	 * @param primaryTitle
+	 * @param secondaryTitle
+	 * 
+	 * @return chart
+	 */
 	public static Chart createStackChartWithLine(String[] timeData, Number[] primaryData , Number[] secondaryData, Number[] lineData, String title, String loc, final String time, String yLabel, final String lineLabel, String primaryTitle, String secondaryTitle) {  
-		  
-        final Chart chart = new Chart()  
-            .setType(Series.Type.COLUMN)  
-            .setChartTitleText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + "ly " +title) 
-            .setChartSubtitleText(loc)
-            .setColumnPlotOptions(new ColumnPlotOptions()  
-                .setStacking(PlotOptions.Stacking.NORMAL)  
-            )  
-            .setLegend(new Legend()  
-                .setAlign(Legend.Align.RIGHT)  
-                .setVerticalAlign(Legend.VerticalAlign.BOTTOM)     
-                .setFloating(true)  
-                .setBackgroundColor("#FFFFFF")  
-                .setBorderColor("#CCC")  
-                .setBorderWidth(1)  
-                .setShadow(false)  
-            )
-            .setOption("/lang/numericSymbols", null)
-            .setToolTip(new ToolTip()  
+		
+		// Define Stack Column Chart
+        final Chart chart = new Chart();  
+        chart.setType(Series.Type.COLUMN);
+        chart.setColumnPlotOptions(new ColumnPlotOptions()  
+        									.setStacking(PlotOptions.Stacking.NORMAL)  
+        						  ); 
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + "ly " +title)  
+            						.setX(-20)  // center  
+        					)
+        	  .setChartSubtitle(new ChartSubtitle()  
+            							.setText(loc)  
+            							.setX(-20)  // center  
+        						);
+       
+        // Define Legend Position & Style    
+        chart.setLegend(new Legend()  
+            					.setAlign(Legend.Align.RIGHT)  
+            					.setVerticalAlign(Legend.VerticalAlign.BOTTOM)     
+            					.setFloating(true)  
+            					.setBackgroundColor("#FFFFFF")  
+            					.setBorderColor("#CCC")  
+            					.setBorderWidth(1)  
+            					.setShadow(false)  
+        		   		 );
+           
+         // Define Tool Tip   
+         chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
                         return "<b>" + toolTipData.getXAsString() + " ("+time+")" + "</b><br/>" +  
@@ -245,293 +376,432 @@ public class MoxieChartBuilder {
                             (lineLabel.equals(toolTipData.getSeriesName()) ? "" : "Total: " + toolTipData.getTotal());  
                     }  
                 })  
-            );  
-          
-        chart.getXAxis()  
-            .setCategories(timeData)
-            .setAxisTitle(new AxisTitle()  
-            .setText(time).setStyle(new Style().setFontSize("16px"))); 
-  
-        chart.getYAxis(1).setMax(getMaxValue(primaryData).intValue()+getMaxValue(secondaryData).intValue())  
-            .setMin(0)
-            .setAxisTitle(new AxisTitle()  
-            .setText(yLabel).setStyle(new Style().setFontSize("16px")) 
             ); 
         
-     // Secondary yAxis  
-        chart.getYAxis(0).setMax(getMaxValue(lineData))
-        	.setMin(0)
-            .setAxisTitle(new AxisTitle()  
-                .setText(lineLabel).setStyle(new Style().setFontSize("16px"))) 
-            .setLabels(new YAxisLabels()  
-                .setStyle(new Style()  
-                    .setColor("#a74572")  
-                )  
-            ).setOpposite(true); 
-  
-        chart.addSeries(chart.createSeries()
-        	.setYAxis(1)	
-            .setName(primaryTitle)  
-            .setPoints(primaryData) 
-            .setPlotOptions(new ColumnPlotOptions()  
-    				.setColor("#89A54E")
-            	)	
-        );  
-        chart.addSeries(chart.createSeries()  
-        	.setYAxis(1)	
-            .setName(secondaryTitle)  
-            .setPoints(secondaryData)  
-            .setPlotOptions(new ColumnPlotOptions()  
-            		.setColor("#A74945")
-            	) 
-        );
-        chart.addSeries(chart.createSeries()  
-                .setName(lineLabel)  
-                .setType(Series.Type.LINE)  
-                .setPlotOptions(new LinePlotOptions()  
-                    .setColor("#a74572")
-                )
-                .setPoints(lineData)
-                
-            );
+        // Allow Whole Numbers Only
+        chart.getXAxis().setAllowDecimals(false);
+ 		chart.getYAxis().setAllowDecimals(false);
         
-        //chart.setExporting(new Exporting().setEnabled(true));
+		// Define x-Axis
+        chart.getXAxis()  
+             .setCategories(timeData)    // set x-Axis Data - Number[]
+             .setAxisTitle(new AxisTitle()  // set x-Axis Title & Style
+             						.setText(time)
+             						.setStyle(new Style().setFontSize("16px"))
+             			  ); 
   
+        // Define L.H.S y-Axis    
+        chart.getYAxis(1)
+        	 .setMax(getMaxValue(primaryData).intValue()+getMaxValue(secondaryData).intValue())  
+             .setMin(0)
+             .setAxisTitle(new AxisTitle()  // set Title & Style
+             						.setText(yLabel)
+             						.setStyle(new Style().setFontSize("16px")) 
+            		 	  ); 
+        
+        // Define R.H.S y-Axis     
+        chart.getYAxis(0)
+        	 .setMax(getMaxValue(lineData))
+        	 .setMin(0)
+             .setAxisTitle(new AxisTitle()   // set Title & Style
+                					.setText(lineLabel)
+                					.setStyle(new Style().setFontSize("16px"))
+                		   ) 
+             .setLabels(new YAxisLabels()    // set Label & Style
+                                    .setStyle(new Style()  
+                                    .setColor("#a74572")  
+                           )  
+                       )
+             .setOpposite(true);  // set on R.H.S
+  
+        // set y-Axis Primary Data - First Stack
+        chart.addSeries(chart.createSeries()
+        							.setYAxis(1)	
+        							.setName(primaryTitle)   
+        							.setPoints(primaryData)  // set Data - Number []
+        							.setPlotOptions(new ColumnPlotOptions()  
+        													.setColor("#89A54E")
+        									)	
+        				);
+        
+        // set y-Axis Secondary Data - Second Stack
+        chart.addSeries(chart.createSeries()  
+        							.setYAxis(1)	
+        							.setName(secondaryTitle)  
+        							.setPoints(secondaryData)    // set Data - Number []
+        							.setPlotOptions(new ColumnPlotOptions()  
+        														.setColor("#A74945")
+        									) 
+        				);
+        
+        // set line series 
+        chart.addSeries(chart.createSeries()  
+                					.setName(lineLabel)  
+                					.setType(Series.Type.LINE)  // define type...
+                					.setPlotOptions(new LinePlotOptions()  
+                											.setColor("#a74572")
+                								   )
+                					.setPoints(lineData)       // set Data - Number []
+                		);
+        
+        // move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+        
         return chart;  
     }  
 	
+	/**
+	 * 
+	 * Returns Two Stack Chart
+	 * 
+	 * @param timeData
+	 * @param primaryData
+	 * @param secondaryData
+	 * @param title
+	 * @param loc
+	 * @param time
+	 * @param yLabel
+	 * @param primaryTitle
+	 * @param secondaryTitle
+	 * 
+	 * @return chart
+	 */
+	public static Chart createTwoStackChart(String[] timeData, Number[] primaryData , Number[] secondaryData, String title, String loc, final String time, String yLabel, String primaryTitle, String secondaryTitle) {  
+	   
+		// Define Stack Column Chart
+        final Chart chart = new Chart();  
+        chart.setType(Series.Type.COLUMN);
+        chart.setColumnPlotOptions(new ColumnPlotOptions()  
+        									.setStacking(PlotOptions.Stacking.NORMAL)  
+        						  ); 
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + "ly " +title)  
+            						.setX(-20)  // center  
+        					)
+        	  .setChartSubtitle(new ChartSubtitle()  
+            							.setText(loc)  
+            							.setX(-20)  // center  
+        						);
 	
-	 public static Chart createStackChart(String[] timeData, Number[] primaryData , Number[] secondaryData, String title, String loc, final String time, String yLabel, String primaryTitle, String secondaryTitle) {  
-		  
-	        final Chart chart = new Chart()
-	            .setType(Series.Type.COLUMN)  
-	            .setChartTitleText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + "ly " +title) 
-	            .setChartSubtitleText(loc)
-	            .setColumnPlotOptions(new ColumnPlotOptions()  
-	                .setStacking(PlotOptions.Stacking.NORMAL)  
-	            )  
-	            .setLegend(new Legend()  
-		            .setAlign(Legend.Align.RIGHT)  
-	                .setVerticalAlign(Legend.VerticalAlign.BOTTOM)   
-	                .setFloating(true)  
-	                .setBackgroundColor("#FFFFFF")  
-	                .setBorderColor("#CCC")  
-	                .setBorderWidth(1)  
-	                .setShadow(false)   
-	            )  
-	            .setOption("/lang/numericSymbols", null)
-	            .setToolTip(new ToolTip()  
-	                .setFormatter(new ToolTipFormatter() {  
-	                    public String format(ToolTipData toolTipData) {  
-	                        return "<b>" + toolTipData.getXAsString() + "("+time+"): " + "</b><br/>" +  
-	                            toolTipData.getSeriesName() + " : " + toolTipData.getYAsLong() + "<br/>" +  
-	                            "Total: " + toolTipData.getTotal();  
-	                    }  
-	                })  
-	            );  
-	  	        
-	        chart.getXAxis()  
-	            .setCategories(timeData).setAxisTitle(new AxisTitle()  
-	            .setText(time).setStyle(new Style().setFontSize("16px"))  
-	                    ); 
-	  
-	        chart.getYAxis()  
-	            .setMin(0)  
-	            .setAxisTitle(new AxisTitle()  
-	            .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
-                );  
-	  
-	        chart.addSeries(chart.createSeries()  
-	            .setName(primaryTitle)  
-	            .setPoints(primaryData) 
-	            .setPlotOptions(new ColumnPlotOptions()  
-        				.setColor("#89A54E")
-	            	) 
-	        );  
-	        chart.addSeries(chart.createSeries()  
-	            .setName(secondaryTitle)  
-	            .setPoints(secondaryData)  
-	            .setPlotOptions(new ColumnPlotOptions()  
-                		.setColor("#A74945")
-	            	) 
-	        );
-	  
-	        return chart;  
-	    }  
+        // set Legend Position and Styles
+        chart.setLegend(new Legend()  
+	            				.setAlign(Legend.Align.RIGHT)  
+	            				.setVerticalAlign(Legend.VerticalAlign.BOTTOM)   
+	            				.setFloating(true)  
+	            				.setBackgroundColor("#FFFFFF")  
+	            				.setBorderColor("#CCC")  
+	            				.setBorderWidth(1)  
+	            				.setShadow(false)   
+        		 			);
+         
+        // set Chart ToolTip
+        chart.setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                        return "<b>" + toolTipData.getXAsString() + "("+time+"): " + "</b><br/>" +  
+                            toolTipData.getSeriesName() + " : " + toolTipData.getYAsLong() + "<br/>" +  
+                            "Total: " + toolTipData.getTotal();  
+                    }  
+                })  
+            );  
+        
+        
+		// Define x-Axis
+		chart.getXAxis()  
+		    		.setCategories(timeData)   // set x-Axis Data
+		    		.setAxisTitle(new AxisTitle()     // set x-Axis Title and Styles
+		    							.setText(time)			
+		    							.setStyle(new Style().setFontSize("16px"))
+		                    		); 
+		// Define y-Axis  
+	    chart.getYAxis()  
+	        		.setMin(0)  
+        			.setAxisTitle(new AxisTitle()   // set y-Axis Title and Styles
+        									.setText(yLabel)
+        									.setStyle(new Style().setFontSize("16px"))
+        						 );  
 		
-	public static Chart createCombinationChart(String[] xAxisData, final String xLabel, String yLabel, ArrayList<GraphData> dataList, String title, String loc) {  
-		 
+	    // Allows only whole number
+        chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
+		
+		// set y-Axis Primary Data - First Stack
+        chart.addSeries(chart.createSeries()  
+        							.setName(primaryTitle)  
+        							.setPoints(primaryData)   // set Data - Number []
+        							.setPlotOptions(new ColumnPlotOptions()  
+        													.setColor("#89A54E")
+        											) 
+        				);
+        
+        // set y-Axis Primary Data - Second Stack
+		chart.addSeries(chart.createSeries()  
+									.setName(secondaryTitle)  
+									.setPoints(secondaryData)  
+									.setPlotOptions(new ColumnPlotOptions()  
+															.setColor("#A74945")
+													) 
+		        		);
+		
+		// move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+		
+		return chart;  
+	}  
+		
+	
+	/**
+	 * 
+	 * Returns Combination Chart (line charts + column chart)
+	 * 
+	 * @param xAxisData
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList
+	 * @param title
+	 * @param loc
+	 * 
+	 * @return chart
+	 */
+	public static Chart createCombinationChartWithLines(String[] xAxisData, final String xLabel, String yLabel, ArrayList<GraphData> dataList, String title, String loc) {  
+		
+		// Get Primary Data for column chart
 		final String primaryTitle = dataList.get(0).getTitle();
 		final Number[] primaryData = dataList.get(0).getData();
 		
-        final Chart chart = new Chart()
-            .setChartTitleText(xLabel + "ly " +title) 
-            .setChartSubtitleText(loc)
-            .setZoomType(BaseChart.ZoomType.X_AND_Y)  
-            .setToolTip(new ToolTip()  
-                .setFormatter(new ToolTipFormatter() {  
-                    public String format(ToolTipData toolTipData) {  
-                        return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                        		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble() +  
-                                  (primaryTitle.equals(toolTipData.getSeriesName()) ? "" : " %");  
-                    }  
-                })  
-            )  
-            .setLegend(new Legend()  
-	            .setAlign(Legend.Align.RIGHT)  
-	            .setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
-	            .setFloating(true)  
-	            .setBackgroundColor("#FFFFFF")  
-	            .setBorderColor("#CCC")  
-	            .setBorderWidth(1)  
-	            .setShadow(false)  
-            );  
-          
-        chart.getXAxis()  
-            .setCategories(  
-            		xAxisData 
-            ).setAxisTitle(new AxisTitle()  
-            .setText(xLabel).setStyle(new Style().setFontSize("16px"))  
+		// Define Chart
+        final Chart chart = new Chart();
+        chart.setZoomType(BaseChart.ZoomType.X_AND_Y); 
+        
+        // Define Headings
+        chart.setChartTitleText(xLabel + "ly " +title); 
+        chart.setChartSubtitleText(loc);
+        
+        // Define Tool Tip
+        chart.setToolTip(new ToolTip()  
+            .setFormatter(new ToolTipFormatter() {  
+                public String format(ToolTipData toolTipData) {  
+                    return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
+                    		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble() +  
+                              (primaryTitle.equals(toolTipData.getSeriesName()) ? "" : " %");  
+                }  
+            })  
         );  
+            
+        // Define Legend Position & styl
+        chart.setLegend(new Legend()  
+	            				.setAlign(Legend.Align.RIGHT)  
+	            				.setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
+	            				.setFloating(true)  
+	            				.setBackgroundColor("#FFFFFF")  
+	            				.setBorderColor("#CCC")  
+	            				.setBorderWidth(1)  
+	            				.setShadow(false)  
+        				); 
+        
+        //Define x-Axis
+        chart.getXAxis()  
+             .setCategories(xAxisData)
+             				.setAxisTitle(new AxisTitle()  
+             									.setText(xLabel)
+             									.setStyle(new Style().setFontSize("16px")
+             							)  
+             			   );  
+        
+        // Allow Whole Numbers Only
+        chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
   
         // Primary yAxis  
-        chart.getYAxis(1).setMax(getMaxValue(primaryData))  
-            .setAxisTitle(new AxisTitle()  
-                .setText(primaryTitle).setStyle(new Style().setFontSize("16px"))  
+        chart.getYAxis(1)
+        	 .setMax(getMaxValue(primaryData))  
+             .setAxisTitle(new AxisTitle()   // Define YAxis L.H.S Heading and Title 
+             						.setText(primaryTitle)
+             						.setStyle(new Style().setFontSize("16px"))  
             )
-            .setLabels(new YAxisLabels()  
-                .setStyle(new Style()  
-                    .setColor("#A74945")  
-                )  
-                .setFormatter(new AxisLabelsFormatter() {  
-                    public String format(AxisLabelsData axisLabelsData) {  
-                        return axisLabelsData.getValueAsLong() + "";  
-                    }  
-                })  
-            );
+            .setLabels(new YAxisLabels()    // Define YAxis L.H.S Label and Style 
+                				.setStyle(new Style().setColor("#A74945") )  
+                                .setFormatter(new AxisLabelsFormatter() {  
+                                				public String format(AxisLabelsData axisLabelsData) {  
+                                					 return axisLabelsData.getValueAsLong() + "";  
+                                				}  
+                                })  
+            		);
         
+        // Define y-Axis L.H.S Series
         chart.addSeries(chart.createSeries()  
-                .setName(primaryTitle)  
-                .setType(Series.Type.COLUMN)  
-                .setPlotOptions(new ColumnPlotOptions()  
-                    .setColor("#A74945")
-                ) 
-                .setYAxis(1) 
-                .setPoints(primaryData) 
-            ); 
+                					.setName(primaryTitle)  
+                					.setType(Series.Type.COLUMN)    // Column Series
+                					.setPlotOptions(new ColumnPlotOptions()  
+                												.setColor("#A74945")
+                									) 
+                					.setYAxis(1) 
+                					.setPoints(primaryData)      // set data - Number[]
+        				); 
         
         // Secondary yAxis  
-        chart.getYAxis(0).setMin(0).setMax(getMaxValueFromSecondaryData(dataList))
-            .setAxisTitle(new AxisTitle()  
-            .setText(yLabel).setStyle(new Style().setFontSize("16px"))  
-            )  
+        chart.getYAxis(0)
+        	 .setMin(0)
+        	 .setMax(getMaxValueFromSecondaryData(dataList))
+             .setAxisTitle(new AxisTitle()  // Define YAxis R.H.S Heading and Title 
+             						.setText(yLabel)
+             						.setStyle(new Style().setFontSize("16px"))  
+            		 	  )  
             .setOpposite(true)  
-            .setLabels(new YAxisLabels()  
-                .setStyle(new Style()  
-                    .setColor("#89A54E")  
-                )  
-                .setFormatter(new AxisLabelsFormatter() {  
-                    public String format(AxisLabelsData axisLabelsData) {  
-                        return axisLabelsData.getValueAsLong() + " %";  
-                    }  
-                })  
+            .setLabels(new YAxisLabels()  // Define YAxis r.H.S Label and Style 
+                				.setStyle(new Style()  
+                				.setColor("#89A54E")  
+                	  )  
+                	  			.setFormatter(new AxisLabelsFormatter() {  
+                	  									public String format(AxisLabelsData axisLabelsData) {  
+                	  													return axisLabelsData.getValueAsLong() + " %";  
+                	  										}  
+                	  			})  
             );  
   
-
-        for (int i=1; i<dataList.size(); i++) {
+       // Define y-Axis R.H.S Series
+       for (int i=1; i<dataList.size(); i++) {
         	
         	 chart.addSeries(chart.createSeries()  
         	            .setName(dataList.get(i).getTitle())  
-        	            .setType(Series.Type.LINE)  
-        	            .setPoints(dataList.get(i).getData())
+        	            .setType(Series.Type.LINE)  // Line Series
+        	            .setPoints(dataList.get(i).getData())  // set data - Number[]
         	        ); 
         	
         }
         
+       // move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+       
         return chart;  
     }  
 	
-	public static Chart createStackBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
-			final Chart chart = new Chart()  
-	        .setType(Series.Type.BAR) 
-	        .setMarginBottom(25)  
-	        .setChartTitle(new ChartTitle()  
-	            .setText(title)  
-	            .setX(-20))  // center 
-	        .setChartSubtitle(new ChartSubtitle()  
-	            .setText(subtitle)  
-	            .setX(-20))  // center    
-	        .setSeriesPlotOptions(new SeriesPlotOptions()  
-	            .setStacking(PlotOptions.Stacking.NORMAL)  
-	        )  
-	         .setLegend(new Legend()  
-	            .setReversed(true) 
-	            .setShadow(false)
-	            .setTitleText(xLabel)
-	            .setAlign(Legend.Align.RIGHT)  
-	            .setVerticalAlign(Legend.VerticalAlign.MIDDLE) 
-	            .setLayout(Layout.VERTICAL)
-	            .setFloating(true)  
-	            .setBackgroundColor("#FFFFFF")  
-	            .setBorderColor("#CCC")  
-	            .setBorderWidth(1)  
-	            .setShadow(false) 
-            )
-            .setToolTip(new ToolTip()  
-                .setFormatter(new ToolTipFormatter() {  
-                    public String format(ToolTipData toolTipData) {  
-                    	 return "<b>" + toolTipData.getXAsString() + "</b><br/>" +
-                       		  toolTipData.getSeriesName() +  " ("+xLabel+") : " + toolTipData.getYAsDouble(); 
-                    }  
-                })  
-            );  
-	
-			String[] yData = new String[dataList.size()];
-			
-			for(int i=0; i < dataList.size(); i++){
-				
-				GraphData data = dataList.get(i);
-				yData[i] = data.getTitle();
-				
-			}
-			
-		    chart.getXAxis()  
-		        .setCategories(yData);  
+	/**
+	 * 
+	 * Returns Horizontal Stack Bar Chart
+	 * 
+	 * @param timeArray
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList
+	 * @param title
+	 * @param subtitle
+	 * 
+	 * @return chart
+	 */
+	public static Chart createHorizontalStackBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
 		
-		   chart.getYAxis() 
-		        .setAxisTitle(new AxisTitle()  
-            .setText(yLabel).setStyle(new Style().setFontSize("16px"))
-            )  ;
+		// Create stacked Bar Chart
+		final Chart chart = new Chart();  
+		chart.setType(Series.Type.BAR); 
+        chart.setMarginBottom(25);
+        chart.setHeight(750);
+        chart.setSeriesPlotOptions(new SeriesPlotOptions()  
+        										.setStacking(PlotOptions.Stacking.NORMAL)  
+        						  );  
+        
+        // Chart Heading
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title)  
+            						.setX(-20))  // center 
+            .setChartSubtitle(new ChartSubtitle()  
+            						.setText(subtitle)  
+            						.setX(-20)	// center
+            			   );
+        
+        // Set Legend Position & Style
+        chart.setLegend(new Legend()  
+            					.setReversed(true) 
+            					.setShadow(false)
+            					.setTitleText(xLabel)
+            					.setAlign(Legend.Align.RIGHT)  
+            					.setVerticalAlign(Legend.VerticalAlign.MIDDLE) 
+            					.setLayout(Layout.VERTICAL)
+            					.setFloating(true)  
+            					.setBackgroundColor("#FFFFFF")  
+            					.setBorderColor("#CCC")  
+            					.setBorderWidth(1)  
+            					.setShadow(false) 
+        				);
+        
+        // set Tool Tip
+        chart.setToolTip(new ToolTip()  
+            .setFormatter(new ToolTipFormatter() {  
+                public String format(ToolTipData toolTipData) {  
+                	 return "<b>" + toolTipData.getXAsString() + "</b><br/>" +
+                   		  toolTipData.getSeriesName() +  " ("+xLabel+") : " + toolTipData.getYAsDouble(); 
+                }  
+            })  
+        );  
 
-		   ArrayList<Number[]> numberList = new ArrayList<Number[]>();
-		    
-		   for(int i=0; i<timeArray.length; i++){
-			   
-			   Number[] numberData = new Number[dataList.size()];
-			   
-			   for(int j=0; j<dataList.size(); j++){
-				   
-				   Number[] data = dataList.get(j).getData();
-				   numberData[j] = data[i];
-				   
-			   }
-			   
-			   numberList.add(numberData);
-		   }
-		    
+        // Extract Graph Data Title from ArrayList
+		String[] yData = new String[dataList.size()];
+		for(int i=0; i < dataList.size(); i++){
+			
+			GraphData data = dataList.get(i);
+			yData[i] = data.getTitle();
+			
+		}
+		
+		// Define x-Axis
+	    chart.getXAxis()  
+	         .setCategories(yData);
+	
+	    // Define y-Axis
+	   chart.getYAxis() 
+	        .setAxisTitle(new AxisTitle()  // set y-Axis title & styles
+	        						.setText(yLabel)
+	        						.setStyle(new Style().setFontSize("16px"))
+	        				)  ;
+	   
+	   // Allow while number only
+	   chart.getXAxis().setAllowDecimals(false);
+	   chart.getYAxis().setAllowDecimals(false);
+	   
+	   ArrayList<Number[]> numberList = new ArrayList<Number[]>();
+	   
+	   for(int i=0; i<timeArray.length; i++){   // for every time dimension 
 		   
-		   for (int i=timeArray.length-1; i>=0; i--) {
-	        	
-	        	 chart.addSeries(chart.createSeries()  
-	        	            .setName(timeArray[i])
-	        	            .setPoints(numberList.get(i))
-	        	        ); 
-	        	
-	        }
-		    chart.setExporting(new Exporting()
-		       .setOption("/buttons/contextButton/align", "left"));
-		       
-		    return chart;  
+		   Number[] numberData = new Number[dataList.size()];   
+		   
+		   for(int j=0; j<dataList.size(); j++){  // extract all number[j] for graphData list
+			   
+			   Number[] data = dataList.get(j).getData();
+			   numberData[j] = data[i];
+			   
+		   }
+		   
+		   numberList.add(numberData);  // add to list
+	   }
+	    
+	   // create y series for time dimension
+	   for (int i=timeArray.length-1; i>=0; i--) {
+        	
+        	 chart.addSeries(chart.createSeries()  
+        	            .setName(timeArray[i])			
+        	            .setPoints(numberList.get(i))   // extract data Number[]
+        	        ); 
+        	
+        }
+		
+		// move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setOption("/buttons/contextButton/align", "left")
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+	      
+	    return chart;  
 	}
 	
 	public static Number getMaxValue(Number[] data){

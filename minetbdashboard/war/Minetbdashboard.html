@@ -28,6 +28,8 @@
     <script type="text/javascript" src="js/jquery-1.12.1.min.js"></script>
 	<script type="text/javascript" src="js/highcharts.js"></script>
 	<script type="text/javascript" src="js/modules/exporting.js"></script>
+	
+	
   </head>
 
   <!--                                           -->
@@ -36,11 +38,135 @@
   <!-- to create a completely dynamic UI.        -->
   <!--                                           -->
   <body>
-    <table align= "center" style='font-family: Georgia, "Times New Roman", Serif; width: 800px;'>
+  
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <script language="javascript">
+
+  'use strict';$(
+		  function() 
+		  {
+			   var width = 960; 
+			   var animationSpeed = 1250; 
+			   var pause = 3500; 
+			   var currentSlide = 1;
+			   var $slider = $('#slider'); 
+			   var $slideContainer = $('.slides', $slider); 
+			   var $slides = $('.slide', $slider); 
+			   var interval; 
+
+		   		function startSlider() 
+		   		{ 
+			   		interval = setInterval(
+					   		function() 
+					   		{ 
+						   		$slideContainer.animate({'margin-left': '-='+width}, animationSpeed, function() 
+								   		{
+							   				if (++currentSlide === $slides.length) 
+								   				{
+								   					currentSlide = 1; 
+								   					$slideContainer.css('margin-left', 0); 
+
+								   				}
+
+							   			});
+
+					   		}, pause);
+
+			   	} 
+
+			   	function pauseSlider() 
+			   	{
+				   	clearInterval(interval);
+				}
+
+				$slideContainer.on('mouseenter', pauseSlider).on('mouseleave', startSlider);startSlider();
+		});</script>
+		
+	 <div style="width: 960px; margin: 0 auto; display:none">
+	 <div style="position: relative; width: 960px; ">
+	 
+	 <div style="position: absolute; right:0px; top:0px; padding: 3px 7px 3px; z-index:99; background-color: #000000; opacity:0.5; border-radius:7px;"><A style="color: #fff; text-decoration:none; font-size:7pt; line-height:10px; font-family: arial;" HREF="&#104;&#116;&#116;&#112;&#58;&#47;&#47;&#119;&#119;&#119;&#46;&#49;&#50;&#51;&#45;&#115;&#108;&#105;&#100;&#101;&#115;&#104;&#111;&#119;&#46;&#99;&#111;&#109;" TARGET="_blank">&#87;&#101;&#98;&#32;&#83;&#108;&#105;&#100;&#101;&#115;&#104;&#111;&#119;</A></div><style type="text/css">#slider {width: 960px; height: 300px; border: 0px solid #FFFFFF; border-radius: 0px; overflow: hidden; position: relative;  cursor: hand; cursor: pointer}#slider .slides {width: 13440px; height: 300px;  display: block; margin: 0; padding: 0;}#slider .slide {width: 960px; height: 300px; float: left; list-style-type: none;}.FET160429 {position: absolute; max-width: 960px; margin: 0px;}.c12050  {position: absolute; bottom: 0px; width:100%;  padding: 12px; background-color: rgba(0, 0, 0, 0.7); color: #9BC041; font-size:24pt; font-family:Lucida Sans Unicode; text-align:center; line-height:48px; z-index:33; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}</style><div id="slider"><ul class="slides">
+	
+	<li class="slide slide1">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/1.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide2">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/11.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide3">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/111.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide4">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/2.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide5">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/3.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide6">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/4.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide7">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/6.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	<li class="slide slide8">
+	 <figure class="FET160429">
+	  <IMG SRC="123-slideshow/7.jpg">
+	 <figcaption class="c12050">
+	Mine TB - Reporting DashBoard
+	</figcaption> 
+	 </figure>
+	 </li>
+	
+	</ul></div></div></div>
+
+  
+<!--     <table align= "center" style='font-family: Georgia, "Times New Roman", Serif; width: 800px;'>
 		<tr>
 			<td align="center" style='font-family: Verdana, Arial, Sans-Serif; color: #9bc041; font-size: 25px; font-weight: bold'>MINE-TB Reporting Dashboard</td>
 		</tr>
-	</table>
+	</table> -->
 	<hr>
     <!-- OPTIONAL: include this if you want history support -->
     <iframe src="javascript:''" id="__gwt_historyFrame" tabIndex='-1' style="position:absolute;width:0;height:0;border:0"></iframe>
