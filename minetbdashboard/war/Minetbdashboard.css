@@ -102,6 +102,10 @@ hr {
 
 .logout-button {
 	color: #9bc041;
+	text-align: right;
+	padding-right: 5px;
+	font-weight: bold;
+	cursor: default; 
 }
 
 .logout-button:hover {
@@ -112,8 +116,17 @@ hr {
 	color: #F58220;
 }
 
+.green-text {
+	color: #9bc041;
+}
+
 .bold-orange-text{
 	color: #F58220;
+	font-weight: bold;
+}
+
+.bold-green-text{
+	color: #9bc041;
 	font-weight: bold;
 }
 
@@ -151,3 +164,54 @@ hr {
 	padding-right: 2px;
 }
 
+.rightmenuitem{
+	flaot: right;
+}
+
+.leftmenuitem{
+	float: left;
+}
+
+.current-page {
+	color: #9bc041;
+	text-align: right;
+	font-weight: bold;
+	padding-left: 5px;
+	padding-right: 5px;
+	cursor: default;
+	font-size: 15px !important;
+}
+
+.current-page:hover {
+	color: #F58220;
+}
+
+.different-page {
+	color: #9bc041;
+	text-align: right;
+	padding-left: 5px;
+	padding-right: 5px;
+	cursor: default;
+	font-size: 15px !important;
+}
+
+.different-page:hover {
+	color: #F58220;
+}
+
+.closeButton {
+  -webkit-border-radius: 35 !important;
+  -moz-border-radius: 35 !important;
+  border-radius: 35px !important;
+  border-color: #9bc041 !important;
+  font-family: 'Open Sans' New !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  background: #9bc041 !important;
+  font-weight: bold;
+}
+.closeButton:hover {
+  background: #ffffff !important;
+  color: #9bc041 !important;
+  border-color: #ffffff !important;
+}

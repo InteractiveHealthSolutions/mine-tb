@@ -36,7 +36,6 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
  */
 public class MoxieChartBuilder {
 	
-	
 	/**
 	 * Returns Line Chart 
 	 * 
@@ -50,20 +49,6 @@ public class MoxieChartBuilder {
 	 * @return Chart
 	 */
 	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle){
-		
-		// if y-axis has more than 10 variable - Go for Stack Bar Chart
-		if(dataList.size() > 10){
-			
-			Chart chart = createHorizontalStackBarChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
-			return chart;
-		}
-		
-		// If there's only one variable on x-axis - Go for Column Chart
-		if(timeArray.length == 1){
-			
-			Chart chart = createColumnChart(timeArray,xLabel, yLabel, dataList, title, subTitle);
-			return chart;
-		}
 		
 		// Define LINE Chart
 		final Chart chart = new Chart();  
@@ -137,6 +122,8 @@ public class MoxieChartBuilder {
 	       .setSourceWidth(1500)
 	       .setSourceHeight(1500)
 	    		);
+	    
+	    //chart.setSize("1500px", "1500px");
 	    
 	    return chart;  
 	}
