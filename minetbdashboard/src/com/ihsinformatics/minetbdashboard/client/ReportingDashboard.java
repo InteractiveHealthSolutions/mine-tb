@@ -16,47 +16,40 @@ package com.ihsinformatics.minetbdashboard.client;
 
 import java.util.Date;
 
-import org.w3c.css.sac.CombinatorCondition;
-
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.user.client.Command;
-import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.MenuBar;
-import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.ihsinformatics.minetbdashboard.shared.CustomMessage;
-import com.ihsinformatics.minetbdashboard.shared.ErrorType;
 import com.ihsinformatics.minetbdashboard.shared.LocationDimension;
-import com.ihsinformatics.minetbdashboard.shared.MineTB;
 import com.ihsinformatics.minetbdashboard.shared.TimeDimenstion;
 
 public class ReportingDashboard extends Composite implements ChangeHandler, ClickHandler
 {
 	
+	private static LoadingWidget loading = new LoadingWidget();
 	
-	private VerticalPanel mainPanel = new VerticalPanel();
+	private VerticalPanel mainVerticalPanel = new VerticalPanel();
 	
 	private HTML reportingOptionsLabel = new HTML("<font size=\"6\"> Reporting Options </font> <br> <br> ");
 	
 	private FlexTable optionsTable = new FlexTable();
 	private FlexTable dateFilterTable = new FlexTable();
+	
+	private RadioButton simpleRadioButton = new RadioButton("radioGroup", "Simple Reports");
+    private RadioButton combinedRadioButton = new RadioButton("radioGroup", "Combination Reports");
+    
+    private HorizontalPanel radioButtonPanel = new HorizontalPanel();
 	
 	private ListBox reportsList = new ListBox();
 	private ListBox locationDimensionList = new ListBox();
@@ -70,23 +63,16 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 	private ListBox monthTo = new ListBox();
 	private ListBox weekFrom = new ListBox();
 	private ListBox weekTo = new ListBox();
-	
-	private RadioButton simpleRadioButton = new RadioButton("radioGroup", "Simple Reports");
-    private RadioButton combinedRadioButton = new RadioButton("radioGroup", "Combination Reports");
-    
-    private HorizontalPanel radioButtonPanel = new HorizontalPanel();
-	
+
 	private Button showButton = new Button("Generate Reports");
-	private Button clearButton = new Button("Clear");
 	
-	@SuppressWarnings("deprecation")
 	public ReportingDashboard ()
 	{	
 		
-		mainPanel.setSize("100%", "100%");
+		mainVerticalPanel.setSize("100%", "100%");
 	
 		reportingOptionsLabel.setStyleName("MineTBHeader");
-		mainPanel.add(reportingOptionsLabel);
+		mainVerticalPanel.add(reportingOptionsLabel);
 		
 		radioButtonPanel.add(simpleRadioButton);
 		radioButtonPanel.add(combinedRadioButton);
@@ -109,15 +95,14 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 		createDateFilterWidgets(TimeDimenstion.YEAR);
 		timeDimensionList.addChangeHandler(this);
 		
-		mainPanel.add(optionsTable);
+		mainVerticalPanel.add(optionsTable);
 		
 		HorizontalPanel buttonsPanel = new HorizontalPanel();
 		buttonsPanel.add(showButton);
-		//buttonsPanel.add(clearButton);
 		buttonsPanel.setSpacing(5);
 		buttonsPanel.getElement().setAttribute("align", "center");
 		
-		mainPanel.add(buttonsPanel);
+		mainVerticalPanel.add(buttonsPanel);
 		
 		showButton.addClickHandler(this);
 		simpleRadioButton.addClickHandler(this);
@@ -125,6 +110,11 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 		
 	}
 	
+	/**
+	 * 
+	 * Filter Date Widgets according to Time dimension
+	 * @param time
+	 */
 	public void createDateFilterWidgets(TimeDimenstion time) {
 		dateFilterTable.clear();
 		switch (time) {
@@ -152,11 +142,14 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 
 	}
 	
-	@SuppressWarnings("deprecation")
+	/**
+	 * 
+	 * Fill Drop Downs...
+	 */
 	public void fillLists() {
 		String[] reports = { "Screening", "Sputum Submission",
 				"GeneXpert: MTB Positive and Rif Resistants",
-				"GeneXpert Results", "Treatment Initiated",
+				"GeneXpert: Other Results", "Treatment Initiated",
 				"Treatment Outcome Results"};
 		
 		for (String str : reports) {
@@ -186,34 +179,32 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 		}
 	}
 
+	/**
+	 * 
+	 * @return mainVerticalPanel
+	 */
 	public VerticalPanel getComposite(){
-		return mainPanel;
+		return mainVerticalPanel;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.dom.client.ChangeHandler#onChange(com.google.gwt.event.dom.client.ChangeEvent)
-	 */
 	@Override
 	public void onChange(ChangeEvent event) {
 		Object source = event.getSource();
 		if (source == timeDimensionList) {
-			TimeDimenstion time = TimeDimenstion.valueOf(MineTBClient
-					.get(timeDimensionList));
+			TimeDimenstion time = TimeDimenstion.valueOf(MineTBClient.get(timeDimensionList));
 			createDateFilterWidgets(time);
 		}
 		Window.scrollTo(0, 220);
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.dom.client.ClickHandler#onClick(com.google.gwt.event.dom.client.ClickEvent)
-	 */
 	@Override
 	public void onClick(ClickEvent event) {
 		Widget sender = (Widget) event.getSource();
 		
 		if(sender == showButton){
 			
-
+			load(true);
+			
 			String report = MineTBClient.get(reportsList);
 			String time = MineTBClient.get(timeDimensionList).toLowerCase();
 			String loc = MineTBClient.get(locationDimensionList).toLowerCase();
@@ -224,7 +215,7 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 			String toString = "";
 			
 			if(time.equalsIgnoreCase("year")){
-				
+	
 				yearFromString = MineTBClient.get(yearFrom); 
 				yearToString = MineTBClient.get(yearTo);
 			}
@@ -253,15 +244,19 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 			else
 				reportType = "Combination Reports";
 			
-			ReportDialogBox myDialog = new ReportDialogBox(reportType, report, time, loc, yearFromString, yearToString, fromString, toString);
-			myDialog.show();
+			// Initiate Report Dialog Box
+			ReportDialogBox reportDialog = new ReportDialogBox(reportType, report, time, loc, yearFromString, yearToString, fromString, toString);
+			
+			load(false);
+			
+			reportDialog.show();
 	           
 			
 		}else if(sender == simpleRadioButton){
 			
 			String[] reports = {"Screening", "Sputum Submission",
 					"GeneXpert: MTB Positive and Rif Resistants",
-					"GeneXpert Results", "Treatment Initiated",
+					"GeneXpert: Other Results", "Treatment Initiated",
 					"Treatment Outcome Results"};
 			reportsList.clear();
 			
@@ -282,6 +277,19 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 			
 		}
 		
+	}
+	
+	/**
+	 * Display/Hide main panel and loading widget
+	 * 
+	 * @param status
+	 */
+	public void load(boolean status) {
+		mainVerticalPanel.setVisible(!status);
+		if (status)
+			loading.show();
+		else
+			loading.hide();
 	}
 	
 }

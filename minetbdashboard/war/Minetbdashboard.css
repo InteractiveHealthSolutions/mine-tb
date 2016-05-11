@@ -159,8 +159,7 @@ hr {
 
 .gridPercentageStyle{
 	text-align: right;
-	width: 50px;
-	border-left: solid 2px white;
+	width: 70px;
 	padding-right: 2px;
 }
 
@@ -215,3 +214,17 @@ hr {
   color: #9bc041 !important;
   border-color: #ffffff !important;
 }
+
+.gwt-TabBar {
+  background-color: #e8e8e8 !important;
+}
+
+.gwt-TabBarItem-selected {
+  font-weight: bold;
+  cursor: default;
+  background-color: #F58220 !important;
+}
+    
+
+
+

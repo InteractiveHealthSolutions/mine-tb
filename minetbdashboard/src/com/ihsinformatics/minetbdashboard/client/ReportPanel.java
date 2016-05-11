@@ -12,10 +12,13 @@
 package com.ihsinformatics.minetbdashboard.client;
 
 import java.util.ArrayList;
+
 import org.moxieapps.gwt.highcharts.client.Chart;
+
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -48,6 +51,7 @@ public class ReportPanel implements ClickHandler {
 	{	
 		
 		panel.setSize("100%", "100%");
+		Chart chart = null;
 		
 		for(GraphData gd: dataList){
 			
@@ -69,6 +73,10 @@ public class ReportPanel implements ClickHandler {
 	        pieRadioButton = new RadioButton("radioGroup"+i, "Pie");
 	        lineRadioButton = new RadioButton("radioGroup"+i, "Line");
 	    	
+	        Label label = new Label("Chart Type: ");
+	        label.setStyleName("bold-green-text");
+	        
+	        horizontalPanel.add(label);
 	        horizontalPanel.add(columnRadioButton);
 	        horizontalPanel.add(barRadioButton);
 	        horizontalPanel.add(pieRadioButton);
@@ -76,12 +84,10 @@ public class ReportPanel implements ClickHandler {
 	        
 	        panel.add(horizontalPanel);
 	        
-			Chart chart = null;
-			
 			// if y-axis has more than 10 variable - Go for Stack Bar Chart
 			if(dataList.size() > 10){
 				
-				chart = MoxieChartBuilder.createHorizontalStackBarChart(arrayT,xLabel, yLabel, dataList, title, subTitle);
+				chart = MoxieChartBuilder.createStackBarChart(arrayT,xLabel, yLabel, dataList, title, subTitle);
 				barRadioButton.setValue(true);
 			}
 			
@@ -94,7 +100,7 @@ public class ReportPanel implements ClickHandler {
 			
 			else {
 			
-				chart = MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, title, xLabel + "ly" + subTitle);
+				chart = MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
 				lineRadioButton.setValue(true);
 			}
 			
@@ -102,8 +108,18 @@ public class ReportPanel implements ClickHandler {
 			lineRadioButton.addClickHandler(this);
 			barRadioButton.addClickHandler(this);
 			
-			panel.add(chart);
 		}
+		else{
+			
+			if(reportType.equalsIgnoreCase("Screening Summary"))
+				chart = MoxieChartBuilder.createStackChartWithLine(arrayT, dataList.get(0).getData(), dataList.get(1).getData(), dataList.get(2).getData(), title, subTitle, xLabel, yLabel, dataList.get(2).getTitle(), dataList.get(0).getTitle(), dataList.get(1).getTitle());
+			else if(reportType.equalsIgnoreCase("Sputum Submission Rates") || reportType.equalsIgnoreCase("Treatment Initiation Rates") || reportType.equalsIgnoreCase("Sputum Submission & Error Rates"))	
+				chart = MoxieChartBuilder.createColumnChartWithLines(arrayT, xLabel, yLabel,dataList, title, subTitle);
+			
+			
+		}
+		
+		panel.add(chart);
 	}
 
 	public VerticalPanel getComposite(){	
