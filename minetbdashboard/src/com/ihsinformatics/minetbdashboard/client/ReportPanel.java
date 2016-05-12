@@ -25,6 +25,7 @@ import com.google.gwt.user.client.ui.Widget;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
 /**
+ * Single Report Panel for Report Dialog Box
  * @author Rabbia
  *
  */
@@ -53,7 +54,7 @@ public class ReportPanel implements ClickHandler {
 		panel.setSize("100%", "100%");
 		Chart chart = null;
 		
-		for(GraphData gd: dataList){
+		for(GraphData gd: dataList){  // Copying GraphData ArrayList
 			
 			GraphData gdata = new GraphData(gd.getTitle(), gd.getData());
 			list.add(gdata);
@@ -65,7 +66,7 @@ public class ReportPanel implements ClickHandler {
 		this.title = title;
 		this.subTitle = subTitle;
 		
-		if(reportType.equalsIgnoreCase("Simple reports")){
+		if(reportType.equalsIgnoreCase("Simple reports")){   // if, simple reports... provide chart type radio buttons.
 			
 			i++;
 			columnRadioButton = new RadioButton("radioGroup"+i, "Column");
@@ -98,7 +99,7 @@ public class ReportPanel implements ClickHandler {
 				columnRadioButton.setValue(true);
 			}
 			
-			else {
+			else {  // Line chart...
 			
 				chart = MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
 				lineRadioButton.setValue(true);
@@ -109,7 +110,7 @@ public class ReportPanel implements ClickHandler {
 			barRadioButton.addClickHandler(this);
 			
 		}
-		else{
+		else{ // if combinations charts...
 			
 			if(reportType.equalsIgnoreCase("Screening Summary"))
 				chart = MoxieChartBuilder.createStackChartWithLine(arrayT, dataList.get(0).getData(), dataList.get(1).getData(), dataList.get(2).getData(), title, subTitle, xLabel, yLabel, dataList.get(2).getTitle(), dataList.get(0).getTitle(), dataList.get(1).getTitle());
@@ -126,9 +127,6 @@ public class ReportPanel implements ClickHandler {
 		return panel;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.dom.client.ClickHandler#onClick(com.google.gwt.event.dom.client.ClickEvent)
-	 */
 	@Override
 	public void onClick(ClickEvent event) {
 		

@@ -25,6 +25,12 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.ihsinformatics.minetbdashboard.shared.CustomMessage;
 import com.ihsinformatics.minetbdashboard.shared.ErrorType;
 
+/**
+ * 
+ * Summary Table Report Page
+ * @author Rabbia
+ *
+ */
 public class SummaryReport extends Composite 
 {
 	private static ServerServiceAsync service = GWT.create(ServerService.class);

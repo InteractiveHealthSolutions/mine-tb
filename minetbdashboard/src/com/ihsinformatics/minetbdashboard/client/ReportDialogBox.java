@@ -37,7 +37,15 @@ import com.ihsinformatics.minetbdashboard.shared.GraphData;
 import com.ihsinformatics.minetbdashboard.shared.Parameter;
 import com.ihsinformatics.minetbdashboard.shared.TimeDimenstion;
 
-class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
+/**
+ * 
+ * Dialog Box for Reports 
+ * @author Rabbia
+ *
+ */
+
+
+class ReportDialogBox extends WindowBox {
 	
 	private static ServerServiceAsync service = GWT.create(ServerService.class);
 
@@ -68,14 +76,14 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 		this.from = from;
 		this.reportType = reportType;
     	
-       setText(report);
+       setText(report); // Title
        
        int width = Window.getClientWidth() - 20;
        setWidth(width+"px");
        mainPanel.setSize("100%", "100%");
        chartPanel.setSize("100%", "100%");
        
-       setModal(false);
+       setModal(false);				//parent screen remain active
        setAnimationEnabled(true);
        setGlassEnabled(false);
        
@@ -89,7 +97,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 
 		@Override
 		public void onClick(ClickEvent event) {
-			 ReportDialogBox.this.hide();
+			 ReportDialogBox.this.hide();    //close
 		}
        });
        
@@ -99,7 +107,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 
 		@Override
 		public void onClick(ClickEvent event) {
-			 ReportDialogBox.this.setPopupPosition(0, 700);
+			 ReportDialogBox.this.setPopupPosition(0, 700);   //minimize
 		}
        });
 
@@ -109,7 +117,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 
 		@Override
 		public void onClick(ClickEvent event) {
-			setPopupPosition(0, 150);
+			setPopupPosition(0, 150);       //maximize
 		}
        });
        
@@ -137,7 +145,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 				+ " per " + Character.toUpperCase(time.charAt(0))
 				+ time.substring(1);
        
-       subheadingLabel.setText(labelText + timeline);
+       subheadingLabel.setText(labelText + timeline);       // subheading
        subheadingLabel.setStyleName("bold-green-text");
        subheadingLabel.getElement().setAttribute("align", "left");
        
@@ -159,7 +167,10 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
        
     }
     
-    
+    /**
+     * Creates and Display Charts 
+     * a/c to selections
+     */
     private void fillChartPanel(){
     
     	StringBuilder query = getQuery();
@@ -167,6 +178,10 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Returns query a/c to selections
+     * @return Query -> String Builder
+     */
     private StringBuilder getQuery(){
     	
     	StringBuilder query = new StringBuilder();
@@ -272,6 +287,10 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	return query;
     }
     
+    /**
+     * Get and manage data from Query Result
+     * @param query
+     */
     private void drawCharts(StringBuilder query){
     	
     	try {
@@ -279,11 +298,12 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 						@Override
 						public void onSuccess(final String[][] result) {
 							
-							String[] timeArray = getTimeArray();
+							String[] timeArray = getTimeArray();    // Get all time values
 							String xLabel = Character.toUpperCase(time.charAt(0)) + time.substring(1);
-							String[] locations = getUniqueValues(result, 1);
+							String[] locations = getUniqueValues(result, 1);    // Get all unique locations involved 
 							String[] arrayT = timeArray;
 
+							// Converts month# to month name
 							if (time.equals("month")) {
 								for (int i = 0; i < timeArray.length; i++) {
 									String monthString;
@@ -334,13 +354,15 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 							
 							String yearString = "";
 
+							// Year String according to time dimension selected
 							if (time.equalsIgnoreCase("year"))
 									yearString = " (" + yearFrom + " - " + yearTo + ")";
 							else
 								yearString = " (" + yearFrom + ")";
 							
 							timeArray = getTimeArray();
-							
+
+							// Draw specific chart
 							if(report.equalsIgnoreCase("screening"))
 								drawScreening(result, locations, timeArray, arrayT, xLabel, yearString);
 							else if (report.equalsIgnoreCase("Sputum Submission"))
@@ -375,6 +397,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Screening Charts (#Screened, #Suspects, #Non-Suspects) 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawScreening(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	chartPanel.add(tabPanel);
@@ -406,6 +438,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 
     }
     
+    /**
+     * Draw Sputum Submission (#Sputum Submissions) 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawSputumSubmission(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	chartPanel.add(tabPanel);
@@ -421,6 +463,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw MTB Positive Results (#Total Results, #All Cases Detected, #All Rif Resistant) 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawPositiveResults(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	chartPanel.add(tabPanel);
@@ -452,6 +504,17 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Other Results (#Total Results, #All Cases Detected, #MTB Negative, #Unsuccessful Results, #Leaked Results,
+     *                     #Insufficient Quantity, #Rejected Results, #Error Results, #Invalid Result, #No Result, #Other Result) 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
    public void drawOtherResults(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     
 	   	chartPanel.add(tabPanel);
@@ -546,6 +609,17 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	secondTabPanel.selectTab(0);
     }
     
+   /**
+    * Draw Other Results (#Total Treatment Initiated, #Treatment Transferred Out, #Treatment Not Initiated, #Patient Refused,
+    * 						#Patients Not Found, #Missing Contact Info, #Died, #Already on Treatment) 
+    * 
+    * @param result
+    * @param locations
+    * @param timeArray
+    * @param arrayT
+    * @param xLabel
+    * @param yearString
+    */
     public void drawTreatmentInitiation(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	chartPanel.add(tabPanel);
@@ -611,6 +685,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Other Results (#Total Cured, #Treatment Completed, #Default, #Treatment Failure, #Patient Died, #Transferred Out) 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawTreatmentOutcome(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	chartPanel.add(tabPanel);
@@ -648,7 +732,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     	dataList.clear();
     	
-    	// Add Treatment Failure
+    	// Add Patient Died
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,6);
     	yLabel = "Patient Death";
     	ReportPanel patientDeathPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Death", yearString);
@@ -656,7 +740,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     	dataList.clear();
     	
-    	// Add Treatment Failure
+    	// Add Transferred Out
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,7);
     	yLabel = "Transferred Out";
     	ReportPanel transferredOutPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Transferred Out", yearString);
@@ -666,6 +750,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Screening Summary for every unique location
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawScreeningSummary(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
     	for (int i = 0; i < locations.length; i++) {
@@ -680,7 +774,7 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 				if(!loc.equals("")){
 					Double[] primaryData = getColumnData(result,timeArray, loc, 3);
 					Double[] secondaryData = getColumnData(result,timeArray, loc, 4);
-					Double[] cumalativeData = getCumalativeData(result, timeArray, loc, 2);
+					Double[] cumalativeData = getCumulativeData(result, timeArray, loc, 2);
 					
 					GraphData primaryGraphData = new GraphData("Suspect", primaryData);
 					GraphData secondaryGraphData = new GraphData("Non-Suspect", secondaryData);
@@ -704,6 +798,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Sputum Submission Rate for every unique location
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawSputumSubmissionRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
         
     	for (int i = 0; i < locations.length; i++) {
@@ -741,6 +845,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     * Draw Treatment Initiation Rate for every unique location
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     public void drawTreatmentInitiationRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     
     	for (int i = 0; i < locations.length; i++) {
@@ -778,6 +892,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     
     }
     
+    /**
+     * Draw Sputum Submission And Error Rate for every unique location
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param arrayT
+     * @param xLabel
+     * @param yearString
+     */
     private void drawSputumSubmissionAndErrorRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString) {
     	
     	for (int i = 0; i < locations.length; i++) {
@@ -824,6 +948,15 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     
     }
     
+    /**
+     * Get Column (index#) Data for specific location and time dimension from Result in ArrayList of GraphData. 
+     * 
+     * @param result
+     * @param locations
+     * @param timeArray
+     * @param index
+     * @return ArrayList -> GraphData
+     */
     public ArrayList<GraphData> getColumnDataAsGraphData(String[][] result, String[] locations, String[] timeArray, int index){
     	
     	ArrayList<GraphData> dataList = new ArrayList<GraphData>();
@@ -841,6 +974,15 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
     	
     }
     
+    /**
+     *  Get Column(#index) data from result[][] data.
+     * 
+     * @param data
+     * @param timeArray
+     * @param loc
+     * @param index
+     * @return
+     */
     public Double[] getColumnData(String[][] data, String[] timeArray,
 			String loc, int index) {
 		ArrayList<Double> doubleArray = new ArrayList<Double>();
@@ -853,7 +995,10 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 		return doubleArr;
 	}
     
-    
+    /**
+     * Get Time data in Array a.c to Time Dimension
+     * @return String[]
+     */
     public String[] getTimeArray() {
 
 		ArrayList<String> timeArray = new ArrayList<String>();
@@ -983,8 +1128,15 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 		return array;
 	}
 
-	private double findValueInData(String[][] data, String columnValue,
-			String rowValue, int valueIndex) {
+	/**
+	 * 
+	 * @param data
+	 * @param columnValue
+	 * @param rowValue
+	 * @param valueIndex
+	 * @return
+	 */
+	private double findValueInData(String[][] data, String columnValue, String rowValue, int valueIndex) {
 		double value = 0;
 		for (int i = 0; i < data.length; i++) {
 			if (data[i][1].equals(columnValue) && data[i][0].equals(rowValue)) {
@@ -994,8 +1146,16 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 		return value;
 	}
 	
-	public Double[] getCumalativeData(String[][] data, String[] timeArray,
-			String loc, int index) {
+	/**
+	 * Calculates cumulative Data for specific index for every over every unique time
+	 * 
+	 * @param data
+	 * @param timeArray
+	 * @param loc
+	 * @param index
+	 * @return
+	 */
+	public Double[] getCumulativeData(String[][] data, String[] timeArray, String loc, int index) {
 		ArrayList<Double> doubleArray = new ArrayList<Double>();
 		Double screeningValue = 0.0;
 		for (int i = 0; i < timeArray.length; i++) {
@@ -1003,21 +1163,10 @@ class ReportDialogBox extends WindowBox implements SelectionHandler<Integer> {
 			screeningValue = screeningValue + value;
 			doubleArray.add(screeningValue);
 		}
+		
 		Double[] doubleArr = new Double[doubleArray.size()];
 		doubleArr = doubleArray.toArray(doubleArr);
 		return doubleArr;
-	}
-
-
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.logical.shared.SelectionHandler#onSelection(com.google.gwt.event.logical.shared.SelectionEvent)
-	 */
-	@Override
-	public void onSelection(SelectionEvent<Integer> event) {
-	  SelectionEvent<Integer> selectedTab = event;
-	  selectedTab.getSelectedItem();
-		
-		
 	}
     
  }

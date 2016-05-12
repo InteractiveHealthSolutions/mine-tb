@@ -48,6 +48,8 @@ import com.ihsinformatics.minetbdashboard.shared.MineTB;
  * -> Display Login Page
  * -> Redirects to Main Dashboard if session is active. 
  * -> Redirects to Main Dashboard after verifying the credentials.
+ * 
+ * @author Rabbia
  */
 
 public class Minetbdashboard implements EntryPoint, ClickHandler,KeyDownHandler {
