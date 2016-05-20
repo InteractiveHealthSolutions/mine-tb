@@ -88,14 +88,14 @@ public class ReportPanel implements ClickHandler {
 			// if y-axis has more than 10 variable - Go for Stack Bar Chart
 			if(dataList.size() > 10){
 				
-				chart = MoxieChartBuilder.createStackBarChart(arrayT,xLabel, yLabel, dataList, title, subTitle);
+				chart = MoxieChartBuilder.createStackBarOnTimeChart(arrayT,xLabel, yLabel, dataList, title, subTitle);
 				barRadioButton.setValue(true);
 			}
 			
 			// If there's only one variable on x-axis - Go for Column Chart
 			else if(arrayT.length == 1){
 				
-				chart = MoxieChartBuilder.createColumnChart(arrayT,xLabel, yLabel, dataList, title, subTitle);
+				chart = MoxieChartBuilder.createColumnChart(arrayT,xLabel, yLabel, dataList, title, subTitle, false);
 				columnRadioButton.setValue(true);
 			}
 			
@@ -108,16 +108,29 @@ public class ReportPanel implements ClickHandler {
 			columnRadioButton.addClickHandler(this);
 			lineRadioButton.addClickHandler(this);
 			barRadioButton.addClickHandler(this);
+			pieRadioButton.addClickHandler(this);
 			
 		}
-		else{ // if combinations charts...
+		else{ // if other charts...
 			
 			if(reportType.equalsIgnoreCase("Screening Summary"))
 				chart = MoxieChartBuilder.createStackChartWithLine(arrayT, dataList.get(0).getData(), dataList.get(1).getData(), dataList.get(2).getData(), title, subTitle, xLabel, yLabel, dataList.get(2).getTitle(), dataList.get(0).getTitle(), dataList.get(1).getTitle());
 			else if(reportType.equalsIgnoreCase("Sputum Submission Rates") || reportType.equalsIgnoreCase("Treatment Initiation Rates") || reportType.equalsIgnoreCase("Sputum Submission & Error Rates"))	
 				chart = MoxieChartBuilder.createColumnChartWithLines(arrayT, xLabel, yLabel,dataList, title, subTitle);
-			
-			
+			else if(reportType.equalsIgnoreCase("Line"))
+				chart = MoxieChartBuilder.createLineChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
+			else if(reportType.equalsIgnoreCase("Column"))
+				chart = MoxieChartBuilder.createColumnChart(arrayT, xLabel, yLabel, dataList, title, subTitle, false);
+			else if(reportType.equalsIgnoreCase("Bar"))
+				chart = MoxieChartBuilder.createBarChart(arrayT, xLabel, yLabel, dataList, title, subTitle, false);
+			else if(reportType.equalsIgnoreCase("Stacked Column"))
+				chart = MoxieChartBuilder.createColumnChart(arrayT, xLabel, yLabel, dataList, title, subTitle, true);
+			else if(reportType.equalsIgnoreCase("Stacked Bar"))
+				chart = MoxieChartBuilder.createBarChart(arrayT, xLabel, yLabel, dataList, title, subTitle, true);
+			else if(reportType.equalsIgnoreCase("Stacked on Time Column"))
+				chart = MoxieChartBuilder.createStackColumnOnTimeChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
+			else if(reportType.equalsIgnoreCase("Stacked on Time Bar"))
+				chart = MoxieChartBuilder.createStackBarOnTimeChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
 		}
 		
 		panel.add(chart);
@@ -138,7 +151,7 @@ public class ReportPanel implements ClickHandler {
 			
 			if(columnRadioButton.getValue()){
 				
-				Chart chart = MoxieChartBuilder.createColumnChart(arrayT,xLabel, yLabel, list, title, subTitle);
+				Chart chart = MoxieChartBuilder.createColumnChart(arrayT,xLabel, yLabel, list, title, subTitle, false);
 				panel.add(chart);
 				
 			}
@@ -158,7 +171,17 @@ public class ReportPanel implements ClickHandler {
 			
 			if(barRadioButton.getValue()){
 				
-				Chart chart = MoxieChartBuilder.createBarChart(arrayT,xLabel, yLabel, list, title, subTitle);
+				Chart chart = MoxieChartBuilder.createBarChart(arrayT,xLabel, yLabel, list, title, subTitle, false);
+				panel.add(chart);
+				
+			}
+			
+		}
+		else if(sender == pieRadioButton){
+			
+			if(pieRadioButton.getValue()){
+				
+				Chart chart = MoxieChartBuilder.createPieChart(arrayT,xLabel, yLabel, list, title, subTitle);
 				panel.add(chart);
 				
 			}

@@ -221,22 +221,22 @@ public final class DataWarehouseMain {
 	 * Drops and recreates Data warehouse tables to hard reset
 	 */
 	public void resetDataWarehouse() {
-		/*log.info("Starting DW hard reset");
+		log.info("Starting DW hard reset");
 		Object[] tables = dwDb.getColumnData("information_schema.tables",
 				"table_name", "table_schema='" + dwSchema + "'");
 		for (Object t : tables) {
 			log.info("Deleting table " + t);
 			dwDb.deleteTable(t.toString());
 		}
-		extractLoad(true);*/
+		extractLoad(true);
 		createDimensions();
-		/*transform();
-		createFacts();*/
+		transform();
+		createFacts();
 		
-		/*String query = "update meta_data set value = now() where tag = 'last_updated';";
+		String query = "update meta_data set value = now() where tag = 'last_updated';";
 		dwDb.runCommand(CommandType.UPDATE, query.toString());
 		
-		log.info("Finished DW hard reset");*/
+		log.info("Finished DW hard reset");
 	}
 
 	public void extractLoad(boolean fromScratch) {
@@ -256,7 +256,7 @@ public final class DataWarehouseMain {
 	
 	public void createDimensions() {
 		log.info("Starting dimension modeling");
-		/*FileUtil fileUtil = new FileUtil();
+		FileUtil fileUtil = new FileUtil();
 		String[] queries = fileUtil.getLines("dimension_modeling.sql");
 		// Recreate tables
 		for (String query : queries) {
@@ -276,7 +276,7 @@ public final class DataWarehouseMain {
 				log.info(query);
 				dwDb.runCommand(CommandType.INSERT, query);
 			}
-		}*/
+		}
 		// Fill in datetime_dim table
 		Calendar start = Calendar.getInstance();
 		Calendar end = Calendar.getInstance();

@@ -86,9 +86,20 @@ public final class MineTBClient {
 	public static String get(Widget control) {
 		if (control instanceof TextBoxBase)
 			return ((TextBoxBase) control).getText();
-		if (control instanceof ListBox)
-			return ((ListBox) control).getValue(((ListBox) control)
-					.getSelectedIndex());
+		if (control instanceof ListBox){
+			if(((ListBox) control).isMultipleSelect()){
+				String selected = "";
+				for (int i = 0; i < ((ListBox) control).getItemCount(); i++) {
+			        if (((ListBox) control).isItemSelected(i)) {
+			            selected = selected + ((ListBox) control).getValue(i) + " , ";
+			        }
+			    }
+				return selected;
+			}
+			else	
+				return ((ListBox) control).getValue(((ListBox) control)
+						.getSelectedIndex());
+			}
 		if (control instanceof ValueBoxBase<?>)
 			return ((ValueBoxBase<?>) control).getText();
 		return "";

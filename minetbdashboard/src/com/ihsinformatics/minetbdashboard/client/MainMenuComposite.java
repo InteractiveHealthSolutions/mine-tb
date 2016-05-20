@@ -16,7 +16,6 @@ import java.util.Date;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-
 import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -29,6 +28,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.ihsinformatics.minetbdashboard.shared.CustomMessage;
 import com.ihsinformatics.minetbdashboard.shared.ErrorType;
+import com.ihsinformatics.minetbdashboard.shared.GraphData;
 import com.ihsinformatics.minetbdashboard.shared.MineTB;
 
 /**
@@ -52,7 +52,9 @@ public class MainMenuComposite extends Composite implements ClickHandler
 	private Label userLoggedInLabel = new Label();
 	private Label summaryReportLabel = new Label("Summary Report");
 	private Label reportingDashboardLabel = new Label("Reporting Dashboard");
+	private Label dynamicGraphsLabel = new Label("Built Graphs");
 	private Label separatorLabel = new Label("|");
+	private Label secondSeparatorLabel = new Label("|");
 	private Label logoutLabel = new Label("Logout");
 
 	// Widgets for Body
@@ -91,6 +93,7 @@ public class MainMenuComposite extends Composite implements ClickHandler
 		
 		reportingDashboardLabel.addClickHandler(this);
 		summaryReportLabel.addClickHandler(this);
+		dynamicGraphsLabel.addClickHandler(this);
 		logoutLabel.addClickHandler(this);
 
 	}
@@ -120,13 +123,17 @@ public class MainMenuComposite extends Composite implements ClickHandler
 		HTML line = new HTML("<hr  style=\"width:100%;\" />");
 		mainVerticalPanel.add(line);
 		
-		Grid grid1 = new Grid(1,3);
+		Grid grid1 = new Grid(1,5);
 		grid1.setWidget(0, 0, summaryReportLabel);
 		summaryReportLabel.setStyleName("current-page");
 		grid1.setWidget(0, 1, separatorLabel);
 		separatorLabel.setStyleName("orange-text");
 		grid1.setWidget(0, 2, reportingDashboardLabel);
 		reportingDashboardLabel.setStyleName("different-page");
+		grid1.setWidget(0, 3, secondSeparatorLabel);
+		secondSeparatorLabel.setStyleName("orange-text");
+		grid1.setWidget(0, 4, dynamicGraphsLabel);
+		dynamicGraphsLabel.setStyleName("different-page");
 		grid1.getElement().setAttribute("align", "center");
 		
 		headerGrid.setWidget(0, 1, grid1);
@@ -207,6 +214,7 @@ public class MainMenuComposite extends Composite implements ClickHandler
 			
 			summaryReportLabel.setStyleName("current-page");
 			reportingDashboardLabel.setStyleName("different-page");
+			dynamicGraphsLabel.setStyleName("different-page");
 			
 		}
 		else if (sender == reportingDashboardLabel){   // Opens Reporting Dashboard...
@@ -218,7 +226,19 @@ public class MainMenuComposite extends Composite implements ClickHandler
 			
 			summaryReportLabel.setStyleName("different-page");
 			reportingDashboardLabel.setStyleName("current-page");
+			dynamicGraphsLabel.setStyleName("different-page");
 			
+		}
+		else if (sender == dynamicGraphsLabel){   // Opens Dynamic Graphs Page...
+			
+			bodyVerticalPanel.clear();
+			
+			DynamicGraphs dynamicGraphs = new DynamicGraphs();
+			bodyVerticalPanel.add(dynamicGraphs.getComposite());
+			
+			summaryReportLabel.setStyleName("different-page");
+			reportingDashboardLabel.setStyleName("different-page");
+			dynamicGraphsLabel.setStyleName("current-page");
 		}
 		
 		load(false);

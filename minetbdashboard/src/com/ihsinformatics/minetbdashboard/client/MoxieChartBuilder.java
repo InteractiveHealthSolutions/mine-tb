@@ -12,10 +12,14 @@
 package com.ihsinformatics.minetbdashboard.client;
 
 import java.util.ArrayList;
+
 import org.moxieapps.gwt.highcharts.client.*;  
 import org.moxieapps.gwt.highcharts.client.Legend.Layout;
 import org.moxieapps.gwt.highcharts.client.labels.*;  
 import org.moxieapps.gwt.highcharts.client.plotOptions.*; 
+
+import com.google.gwt.dom.client.Style.VerticalAlign;
+import com.google.gwt.user.client.Window;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
 
@@ -44,7 +48,7 @@ public class MoxieChartBuilder {
 		// Define LINE Chart
 		final Chart chart = new Chart();  
         chart.setType(Series.Type.LINE);  
-        chart.setMarginBottom(25);
+        chart.setMarginBottom(60);
         chart.setMarginRight(80);
         
         // Chart Headings
@@ -57,7 +61,7 @@ public class MoxieChartBuilder {
             						.setX(-20)  // center
         			 		   );
         
-        // Set Legends positin and style 
+        // Set Legends position and style 
         chart.setLegend(new Legend()    
                 				.setAlign(Legend.Align.RIGHT)  
                 				.setVerticalAlign(Legend.VerticalAlign.MIDDLE)     
@@ -119,6 +123,110 @@ public class MoxieChartBuilder {
 	    return chart;  
 	}
 	
+	/**
+	 * Returns Pie Chart 
+	 * 
+	 * @param timeArray - x-axis Data Array
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList  - GraphData Array List (YAxis Data)
+	 * @param title
+	 * @param subTitle
+	 * 
+	 * @return Chart
+	 */
+	public static Chart createPieChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle){
+		
+		// Define PIE Chart
+		final Chart chart = new Chart(); 
+        chart.setType(Series.Type.PIE);
+        
+        int locNumber = dataList.size();
+        
+        if(locNumber > 2){
+        	
+        	title = "Pie Chart NOT APPLICABLE for selected Data Set.";
+        	chart.setChartTitle(new ChartTitle()  
+			                      .setText(title)
+			                      .setVerticalAlign(org.moxieapps.gwt.highcharts.client.ChartTitle.VerticalAlign.MIDDLE)
+	                           );
+        	return chart;
+        }
+        
+        String sub = "";
+        if(locNumber == 1)
+        	sub = dataList.get(0).getTitle();
+        else
+        	sub = "Inner Circle: " + dataList.get(0).getTitle() + " - Outer Circle: " + dataList.get(1).getTitle();
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title + " " + subTitle)  
+            						.setX(-20)  // center 
+        					)
+        	 .setChartSubtitle(new ChartSubtitle()  
+            						.setText(sub)  
+            						.setX(-20)  // center
+        			 		   ); 
+        
+        // Set Plot Options... Legends and Label
+        chart.setPiePlotOptions(new PiePlotOptions()  
+            .setAllowPointSelect(true)  
+            .setCursor(PlotOptions.Cursor.POINTER)  
+            .setPieDataLabels(new PieDataLabels()  
+                .setEnabled(false)  
+            )  
+        );
+        
+        // Set Tool Tips
+        chart.setToolTip(new ToolTip()  
+            .setFormatter(new ToolTipFormatter() {  
+                public String format(ToolTipData toolTipData) {  
+                    return toolTipData.getSeriesName() + " <b>(" + toolTipData.getPointName() + ")</b>: " + toolTipData.getYAsDouble();  
+                }  
+            })  
+        );  
+
+      // Set Legend Position and Style
+      chart.setLegend(new Legend()  
+            					.setLayout(Legend.Layout.HORIZONTAL)  
+            					.setAlign(Legend.Align.RIGHT)  
+            					.setVerticalAlign(Legend.VerticalAlign.BOTTOM)  
+            					.setBorderWidth(0)  
+        				); 
+        
+      
+      double size = 0.25;
+      for(int i = 0; (i<locNumber && i<2); i++){
+    	  
+    	Boolean flag = false;  
+    	if(i == locNumber - 1)
+    		flag = true;
+    	
+    	Point[] points = new Point[timeArray.length];
+    	for(int j=0; j<timeArray.length; j++){
+    		Point point = new Point(timeArray[j], dataList.get(i).getData()[j]);
+    		points[j] = point;
+    	}
+    	
+		chart.addSeries(chart.createSeries()  
+		        .setName(dataList.get(i).getTitle())
+	            .setPlotOptions(new PiePlotOptions()  
+	                .setCenter(.5, .5)  
+	                .setInnerSize(size) 
+	                .setShowInLegend(flag)
+	                .setDataLabels(new DataLabels()  
+	                					.setEnabled(false)  
+	                			)
+	            ) 
+		        .setPoints(points)
+		    );  
+		
+    	size = size + 0.25;
+      }  
+      
+	  return chart; 
+	}
 	
 	/**
 	 * 
@@ -133,12 +241,12 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return Chart
 	 */
-	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, Boolean stacked){
 		
-		// if y-axis has more than 10 variable - Go for Stack Bar Chart
+		// if y-axis has more than 10 variable - Go for Stack Bar - on Time
 		if(dataList.size() > 10){
 			
-			Chart chart = createStackColumnChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
+			Chart chart = createStackColumnOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
 			return chart;
 			
 		}
@@ -146,8 +254,13 @@ public class MoxieChartBuilder {
 		// Define Column Chart
 		final Chart chart = new Chart(); 
         chart.setType(Series.Type.COLUMN);  
-        chart.setMarginRight(130);  
-        chart.setMarginBottom(25);
+        chart.setMarginRight(80);  
+        chart.setMarginBottom(60);
+        if(stacked){    // Stacking option! - on Data 
+        chart.setSeriesPlotOptions(new SeriesPlotOptions()  
+										.setStacking(PlotOptions.Stacking.NORMAL)  
+        							);  
+        }
         
         // Chart Headings
         chart.setChartTitle(new ChartTitle()  
@@ -204,8 +317,7 @@ public class MoxieChartBuilder {
 	    	
 	    	chart.addSeries(chart.createSeries()  
 	    	        .setName(dataList.get(i).getTitle())    // Set series name 
-	    	        .setPoints(dataList.get(i).getData()    // Set series data - Number[]
-	    	        )  
+	    	        .setPoints(dataList.get(i).getData())    // Set series data - Number[]    
 	    	    );
 	    } 
 	    
@@ -229,12 +341,12 @@ public class MoxieChartBuilder {
 	 * @param title
 	 * @return
 	 */
-	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, Boolean stacked){
 		
-		// if y-axis has more than 10 variable - Go for Stack Bar Chart
+		// if y-axis has more than 10 variable - Go for Stack Bar on Time
 		if(dataList.size() > 10){
 			
-			Chart chart = createStackBarChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
+			Chart chart = createStackBarOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
 			return chart;
 			
 		}
@@ -242,8 +354,13 @@ public class MoxieChartBuilder {
 		// Define Bar Chart
 		final Chart chart = new Chart() ; 
         chart.setType(Series.Type.BAR);  
-        chart.setMarginRight(130);  
-        chart.setMarginBottom(25);
+        chart.setMarginRight(80);  
+        chart.setMarginBottom(60);
+        if(stacked){  // Stacking option on Data
+        chart.setSeriesPlotOptions(new SeriesPlotOptions()  
+				.setStacking(PlotOptions.Stacking.NORMAL)  
+        	 );  
+        }
         
         // Chart Headings
         chart.setChartTitle(new ChartTitle()  
@@ -316,7 +433,7 @@ public class MoxieChartBuilder {
 	
 	/**
 	 * 
-	 * Returns Stack Bar Chart
+	 * Returns Stack Bar Chart on Time Dimension
 	 * 
 	 * @param timeArray
 	 * @param xLabel
@@ -327,12 +444,12 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return chart
 	 */
-	public static Chart createStackColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createStackColumnOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
 		
 		// Create stacked Bar Chart
 		final Chart chart = new Chart();  
 		chart.setType(Series.Type.COLUMN); 
-        chart.setMarginBottom(25);
+		chart.setMarginBottom(60);
         chart.setWidth("100%");
         chart.setSeriesPlotOptions(new SeriesPlotOptions()  
         										.setStacking(PlotOptions.Stacking.NORMAL)  
@@ -434,7 +551,7 @@ public class MoxieChartBuilder {
 	
 	/**
 	 * 
-	 * Returns Stack Bar Chart
+	 * Returns Stack Bar Chart on Time Dimension
 	 * 
 	 * @param timeArray
 	 * @param xLabel
@@ -445,12 +562,12 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return chart
 	 */
-	public static Chart createStackBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createStackBarOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
 		
 		// Create stacked Bar Chart
 		final Chart chart = new Chart();  
 		chart.setType(Series.Type.BAR); 
-        chart.setMarginBottom(25);
+		chart.setMarginBottom(60);
         chart.setHeight(750);
         chart.setSeriesPlotOptions(new SeriesPlotOptions()  
         										.setStacking(PlotOptions.Stacking.NORMAL)  
@@ -775,7 +892,7 @@ public class MoxieChartBuilder {
         // Secondary yAxis  
         chart.getYAxis(0)
         	 .setMin(0)
-        	 .setMax(getMaxValueFromSecondaryData(dataList))
+        	 .setMax(getMaxValueFromDataList(dataList))
              .setAxisTitle(new AxisTitle()  // Define YAxis R.H.S Heading and Title 
              						.setText(yLabel)
              						.setStyle(new Style().setFontSize("16px"))  
@@ -812,6 +929,11 @@ public class MoxieChartBuilder {
         return chart;  
     }  
 	
+	/**
+	 * Returns Maximum values from Number Array
+	 * @param data
+	 * @return
+	 */
 	public static Number getMaxValue(Number[] data){
 		
 		Number no = data[0];
@@ -823,8 +945,12 @@ public class MoxieChartBuilder {
 		return no;
 	}
 	
-	
-	public static Number getMaxValueFromSecondaryData(ArrayList<GraphData> dataList){
+	/**
+	 * Returns Maximum values from DataList
+	 * @param dataList
+	 * @return
+	 */
+	public static Number getMaxValueFromDataList(ArrayList<GraphData> dataList){
 		
 		Number n = 0;
 		for(int i=1; i<dataList.size(); i++){

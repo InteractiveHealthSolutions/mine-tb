@@ -224,6 +224,21 @@ hr {
   cursor: default;
   background-color: #F58220 !important;
 }
+
+.Option-Panel {
+            width: 330px ;
+            margin-left: auto ;
+            margin-right: auto ;
+            border: 1px solid black;
+            padding: 10px;
+            margin-bottom:6px;
+            margin-top:6px;
+        }
+        
+.Option-Panel:hover {
+            border: 1px solid #9bc041;
+        }
+        
     
 
 
