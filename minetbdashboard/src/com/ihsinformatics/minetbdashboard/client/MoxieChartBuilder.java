@@ -16,10 +16,15 @@ import java.util.ArrayList;
 import org.moxieapps.gwt.highcharts.client.*;  
 import org.moxieapps.gwt.highcharts.client.Legend.Layout;
 import org.moxieapps.gwt.highcharts.client.labels.*;  
-import org.moxieapps.gwt.highcharts.client.plotOptions.*; 
+import org.moxieapps.gwt.highcharts.client.plotOptions.*;
 
-import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.user.client.Window;
+import com.googlecode.gwt.charts.client.ChartLoader;
+import com.googlecode.gwt.charts.client.ChartPackage;
+import com.googlecode.gwt.charts.client.ColumnType;
+import com.googlecode.gwt.charts.client.DataTable;
+import com.googlecode.gwt.charts.client.table.Table;
+import com.googlecode.gwt.charts.client.table.TableOptions;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
 
 
@@ -43,7 +48,7 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return Chart
 	 */
-	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle){
+	public static Chart createLineChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle, String legendType){
 		
 		// Define LINE Chart
 		final Chart chart = new Chart();  
@@ -65,12 +70,10 @@ public class MoxieChartBuilder {
         chart.setLegend(new Legend()    
                 				.setAlign(Legend.Align.RIGHT)  
                 				.setVerticalAlign(Legend.VerticalAlign.MIDDLE)     
-                				.setFloating(true)  
-                				.setBackgroundColor("#FFFFFF")  
-                				.setBorderColor("#CCC")  
-                				.setBorderWidth(1)  
+                				.setFloating(true) 
                 				.setShadow(false) 
                 				.setLayout(Layout.VERTICAL)
+                				.setTitleText(legendType)
         				); 
         
         // Set Tool Tip
@@ -118,8 +121,6 @@ public class MoxieChartBuilder {
 	       .setSourceHeight(1500)
 	    		);
 	    
-	    //chart.setSize("1500px", "1500px");
-	    
 	    return chart;  
 	}
 	
@@ -158,14 +159,15 @@ public class MoxieChartBuilder {
         	sub = dataList.get(0).getTitle();
         else
         	sub = "Inner Circle: " + dataList.get(0).getTitle() + " - Outer Circle: " + dataList.get(1).getTitle();
+       
         
         // Chart Headings
         chart.setChartTitle(new ChartTitle()  
-            						.setText(title + " " + subTitle)  
+            						.setText(title)  
             						.setX(-20)  // center 
         					)
         	 .setChartSubtitle(new ChartSubtitle()  
-            						.setText(sub)  
+            						.setText(subTitle + "<br><br>" + sub)
             						.setX(-20)  // center
         			 		   ); 
         
@@ -174,8 +176,8 @@ public class MoxieChartBuilder {
             .setAllowPointSelect(true)  
             .setCursor(PlotOptions.Cursor.POINTER)  
             .setPieDataLabels(new PieDataLabels()  
-                .setEnabled(false)  
-            )  
+                .setEnabled(true)  
+            )
         );
         
         // Set Tool Tips
@@ -193,6 +195,7 @@ public class MoxieChartBuilder {
             					.setAlign(Legend.Align.RIGHT)  
             					.setVerticalAlign(Legend.VerticalAlign.BOTTOM)  
             					.setBorderWidth(0)  
+            					.setTitleText(xLabel)
         				); 
         
       
@@ -215,9 +218,16 @@ public class MoxieChartBuilder {
 	                .setCenter(.5, .5)  
 	                .setInnerSize(size) 
 	                .setShowInLegend(flag)
-	                .setDataLabels(new DataLabels()  
-	                					.setEnabled(false)  
-	                			)
+        			.setPieDataLabels(new PieDataLabels()  
+	                    .setConnectorColor("#000000")  
+	                    .setEnabled(true)  
+	                    .setColor("#000000")  
+	                    .setFormatter(new DataLabelsFormatter() {  
+	                        public String format(DataLabelsData dataLabelsData) {  
+	                            return " " + dataLabelsData.getYAsDouble();  
+	                        }  
+	                    })  
+	                 )  			
 	            ) 
 		        .setPoints(points)
 		    );  
@@ -241,12 +251,12 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return Chart
 	 */
-	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, Boolean stacked){
+	public static Chart createColumnChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, String legendType, Boolean stacked, Boolean autoAdjusted){
 		
 		// if y-axis has more than 10 variable - Go for Stack Bar - on Time
-		if(dataList.size() > 10){
+		if(dataList.size() > 10 && autoAdjusted){
 			
-			Chart chart = createStackColumnOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
+			Chart chart = createStackColumnOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle, legendType);
 			return chart;
 			
 		}
@@ -274,12 +284,12 @@ public class MoxieChartBuilder {
         
         // Set Legend Position and Style
         chart.setLegend(new Legend()  
-            					.setLayout(Legend.Layout.VERTICAL)  
-            					.setAlign(Legend.Align.RIGHT)  
-            					.setVerticalAlign(Legend.VerticalAlign.TOP)  
-            					.setX(-10)  
-            					.setY(100)  
-            					.setBorderWidth(0)  
+					        .setAlign(Legend.Align.RIGHT)  
+							.setVerticalAlign(Legend.VerticalAlign.MIDDLE)     
+							.setFloating(true) 
+							.setShadow(false) 
+							.setLayout(Layout.VERTICAL)
+							.setTitleText(legendType)
         				);
         
         // Set ToolTip
@@ -341,12 +351,12 @@ public class MoxieChartBuilder {
 	 * @param title
 	 * @return
 	 */
-	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, Boolean stacked){
+	public static Chart createBarChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, String legendType, Boolean stacked, Boolean autoAdjust){
 		
 		// if y-axis has more than 10 variable - Go for Stack Bar on Time
-		if(dataList.size() > 10){
+		if(dataList.size() > 10 && autoAdjust){
 			
-			Chart chart = createStackBarOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle);
+			Chart chart = createStackBarOnTimeChart(timeArray,xLabel, yLabel, dataList, title, subtitle, legendType);
 			return chart;
 			
 		}
@@ -378,8 +388,11 @@ public class MoxieChartBuilder {
             					.setAlign(Legend.Align.RIGHT)  
             					.setVerticalAlign(Legend.VerticalAlign.TOP)  
             					.setX(-10)  
-            					.setY(100)  
-            					.setBorderWidth(0)  
+            					.setY(100)
+            					.setFloating(true) 
+            					.setShadow(false) 
+            					.setBorderWidth(0)
+            					.setTitleText(legendType)
         					);
         
         // Set Tool Tip
@@ -444,7 +457,7 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return chart
 	 */
-	public static Chart createStackColumnOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createStackColumnOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, String legendType){
 		
 		// Create stacked Bar Chart
 		final Chart chart = new Chart();  
@@ -467,15 +480,11 @@ public class MoxieChartBuilder {
         // Set Legend Position & Style
         chart.setLegend(new Legend()  
             					.setReversed(true) 
-            					.setShadow(false)
             					.setTitleText(xLabel)
             					.setAlign(Legend.Align.RIGHT)  
             					.setVerticalAlign(Legend.VerticalAlign.MIDDLE) 
             					.setLayout(Layout.VERTICAL)
-            					.setFloating(true)  
-            					.setBackgroundColor("#FFFFFF")  
-            					.setBorderColor("#CCC")  
-            					.setBorderWidth(1)  
+            					.setFloating(true)
             					.setShadow(false) 
         				);
         
@@ -562,13 +571,14 @@ public class MoxieChartBuilder {
 	 * 
 	 * @return chart
 	 */
-	public static Chart createStackBarOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle){
+	public static Chart createStackBarOnTimeChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subtitle, String legendType){
 		
 		// Create stacked Bar Chart
 		final Chart chart = new Chart();  
 		chart.setType(Series.Type.BAR); 
 		chart.setMarginBottom(60);
-        chart.setHeight(750);
+		if(dataList.size() > 10)
+			chart.setHeight(750);
         chart.setSeriesPlotOptions(new SeriesPlotOptions()  
         										.setStacking(PlotOptions.Stacking.NORMAL)  
         						  );  
@@ -590,11 +600,7 @@ public class MoxieChartBuilder {
             					.setAlign(Legend.Align.RIGHT)  
             					.setVerticalAlign(Legend.VerticalAlign.MIDDLE) 
             					.setLayout(Layout.VERTICAL)
-            					.setFloating(true)  
-            					.setBackgroundColor("#FFFFFF")  
-            					.setBorderColor("#CCC")  
-            					.setBorderWidth(1)  
-            					.setShadow(false) 
+            					.setFloating(true)
         				);
         
         // set Tool Tip
@@ -708,9 +714,6 @@ public class MoxieChartBuilder {
             					.setAlign(Legend.Align.RIGHT)  
             					.setVerticalAlign(Legend.VerticalAlign.BOTTOM)     
             					.setFloating(true)  
-            					.setBackgroundColor("#FFFFFF")  
-            					.setBorderColor("#CCC")  
-            					.setBorderWidth(1)  
             					.setShadow(false)  
         		   		 );
            
@@ -758,7 +761,7 @@ public class MoxieChartBuilder {
                                     .setStyle(new Style()  
                                     .setColor("#a74572")  
                            )  
-                       )
+                       )         
              .setOpposite(true);  // set on R.H.S
   
         // set y-Axis Primary Data - First Stack
@@ -842,10 +845,7 @@ public class MoxieChartBuilder {
         chart.setLegend(new Legend()  
 	            				.setAlign(Legend.Align.RIGHT)  
 	            				.setVerticalAlign(Legend.VerticalAlign.BOTTOM) 
-	            				.setFloating(true)  
-	            				.setBackgroundColor("#FFFFFF")  
-	            				.setBorderColor("#CCC")  
-	            				.setBorderWidth(1)  
+	            				.setFloating(true)
 	            				.setShadow(false)  
         				); 
         
@@ -904,7 +904,7 @@ public class MoxieChartBuilder {
                 	  )  
                 	  			.setFormatter(new AxisLabelsFormatter() {  
                 	  									public String format(AxisLabelsData axisLabelsData) {  
-                	  													return axisLabelsData.getValueAsLong() + " %";  
+                	  													return axisLabelsData.getValueAsLong() + " ";  
                 	  										}  
                 	  			})  
             );  
@@ -927,7 +927,71 @@ public class MoxieChartBuilder {
 	    		);
        
         return chart;  
-    }  
+    } 
+	
+	
+	public static void createTable(String reportType, Table table, ArrayList<GraphData> dataList, String[] timeArray, String xLabel, String yLabel, String title, String subtitle, String legendType) {
+		
+		// Prepare the data
+		DataTable dataTable = DataTable.create();
+		
+		if(reportType.equalsIgnoreCase("Simple Reports")){
+			dataTable.addColumn(ColumnType.STRING, xLabel + subtitle);
+			dataTable.addColumn(ColumnType.STRING, legendType);
+			dataTable.addColumn(ColumnType.NUMBER, yLabel);
+			
+			dataTable.addRows(timeArray.length * dataList.size());
+			
+			int index = 0;
+			for(int i=0; i<dataList.size(); i++){
+			
+				GraphData gd = dataList.get(i);
+				
+				for(int j=0; j<timeArray.length; j++){
+					dataTable.setCell(index, 0, timeArray[j]);
+					dataTable.setCell(index, 1, gd.getTitle());
+					dataTable.setCell(index, 2, gd.getData()[j].intValue());
+					index++;
+				}
+			}
+		}
+		
+		else if(reportType.equalsIgnoreCase("Screening Summary") || reportType.equalsIgnoreCase("Sputum Submission Rates") || reportType.equalsIgnoreCase("Treatment Initiation Rates") || reportType.equalsIgnoreCase("Sputum Submission & Error Rates") 
+				|| reportType.equalsIgnoreCase("Line") || reportType.equalsIgnoreCase("Column") || reportType.equalsIgnoreCase("Bar") || reportType.equalsIgnoreCase("Pie")){
+			
+			dataTable.addColumn(ColumnType.STRING, xLabel);
+			for(int i=0; i<dataList.size(); i++)
+				dataTable.addColumn(ColumnType.NUMBER, dataList.get(i).getTitle());
+			
+			dataTable.addRows(timeArray.length);
+			
+			for(int j=0; j<timeArray.length; j++)
+				dataTable.setCell(j, 0, timeArray[j]);
+			
+			for(int i=0; i<dataList.size(); i++){
+				
+				GraphData gd = dataList.get(i);
+				
+				for(int j = 0; j<timeArray.length; j++){
+					
+					dataTable.setCell(j, i+1, gd.getData()[j].intValue());
+					
+				}
+				
+			}
+			
+		}
+		
+		// Set options
+		TableOptions options = TableOptions.create();
+		options.setAlternatingRowStyle(true);
+		options.setShowRowNumber(true);
+		options.setPageSize(20);
+
+		// Draw the chart
+		table.draw(dataTable, options);
+
+	}
 	
 	/**
 	 * Returns Maximum values from Number Array

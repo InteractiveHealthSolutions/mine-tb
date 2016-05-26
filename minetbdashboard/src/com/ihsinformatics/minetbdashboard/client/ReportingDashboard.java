@@ -43,7 +43,7 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 	
 	private VerticalPanel mainVerticalPanel = new VerticalPanel();
 	
-	private HTML reportingOptionsLabel = new HTML("<font size=\"6\"> Reporting Options </font> <br> <br> ");
+	private HTML reportingOptionsLabel = new HTML("<font size=\"6\"> Built-in Reports </font> <br> <br> ");
 	
 	private FlexTable optionsTable = new FlexTable();
 	private FlexTable dateFilterTable = new FlexTable();
@@ -252,7 +252,7 @@ public class ReportingDashboard extends Composite implements ChangeHandler, Clic
 			load(false);
 			
 			reportDialog.show();
-	           
+	        Window.scrollTo(0, 150);   
 			
 		}else if(sender == simpleRadioButton){
 			

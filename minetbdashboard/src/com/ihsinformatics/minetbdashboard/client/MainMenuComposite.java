@@ -51,8 +51,8 @@ public class MainMenuComposite extends Composite implements ClickHandler
 	private Label loggedInLabel = new Label("Logged in as: ");
 	private Label userLoggedInLabel = new Label();
 	private Label summaryReportLabel = new Label("Summary Report");
-	private Label reportingDashboardLabel = new Label("Reporting Dashboard");
-	private Label dynamicGraphsLabel = new Label("Built Graphs");
+	private Label reportingDashboardLabel = new Label("Built-in Reports");
+	private Label dynamicGraphsLabel = new Label("Custom Charts");
 	private Label separatorLabel = new Label("|");
 	private Label secondSeparatorLabel = new Label("|");
 	private Label logoutLabel = new Label("Logout");

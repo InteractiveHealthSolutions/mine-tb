@@ -21,6 +21,14 @@ body {
 	color: #9bc041;
 }
 
+.ChartHeader {
+    font-size: 18px;
+	font-family: 'Open Sans';
+	font-weight: bolder;
+	text-align: center;
+	vertical-align: middle;
+}
+
 .rootPanel{
 	margin: 5px;
 	font-family: 'Open Sans';

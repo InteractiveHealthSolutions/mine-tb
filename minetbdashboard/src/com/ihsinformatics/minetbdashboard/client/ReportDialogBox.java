@@ -25,6 +25,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ScrollPanel;
@@ -64,6 +65,7 @@ class ReportDialogBox extends WindowBox {
 	String to;
 	String from;
 	String reportType;
+	String[][] dataset;
 	
     public ReportDialogBox(String reportType, String report, String time, String loc, String yearFrom, String yearTo, String from, String to) {
     	
@@ -87,7 +89,7 @@ class ReportDialogBox extends WindowBox {
        setAnimationEnabled(true);
        setGlassEnabled(false);
        
-       setPopupPosition(0, 150);
+       setPopupPosition(0, 200);
 
        mainPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
        
@@ -409,13 +411,15 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawScreening(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
+    	this.dataset = result;
+    	
     	chartPanel.add(tabPanel);
 		tabPanel.setSize("100%", "100%");
     	
     	// Add Total Screened Chart
     	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
     	String yLabel = "Screened";
-    	ReportPanel screenedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Screened", yearString);
+    	ReportPanel screenedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Screened", yearString, loc);
     	tabPanel.add(screenedPanel.getComposite(),yLabel);
     	
 		dataList.clear();
@@ -423,7 +427,7 @@ class ReportDialogBox extends WindowBox {
 		// Add Presumptive and High Risk Chart
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,3);
     	yLabel = "Presumptive and High Risk";
-    	ReportPanel suspectPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Presumptives and High Risks",yearString);
+    	ReportPanel suspectPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Presumptives and High Risks",yearString,loc);
     	tabPanel.add(suspectPanel.getComposite(),yLabel); 	
     	
     	dataList.clear();
@@ -431,7 +435,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Non-Suspects
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
     	yLabel = "Non-Suspects";
-    	ReportPanel nonSuspectPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Non-Suspects",yearString);
+    	ReportPanel nonSuspectPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Non-Suspects",yearString,loc);
     	tabPanel.add(nonSuspectPanel.getComposite(),yLabel); 
     	
     	tabPanel.selectTab(0);
@@ -450,13 +454,15 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawSputumSubmission(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
+    	this.dataset = result;
+    	
     	chartPanel.add(tabPanel);
 		tabPanel.setSize("100%", "100%");
     	
     	// Add Total Screened Chart
     	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
     	String yLabel = "Sputum Submissions";
-    	ReportPanel sputumSubmissionPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Sputum Submissions", yearString);
+    	ReportPanel sputumSubmissionPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, yLabel, "Total Sputum Submissions", yearString, loc);
     	tabPanel.add(sputumSubmissionPanel.getComposite(), yLabel);
     	
     	tabPanel.selectTab(0);
@@ -475,13 +481,15 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawPositiveResults(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
+    	this.dataset = result;
+    	
     	chartPanel.add(tabPanel);
 		tabPanel.setSize("100%", "100%");
     	
     	// Add Total Result Received
     	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
     	String yLabel = "All GeneXpert Results";
-    	ReportPanel allResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Number of Results Received", yearString);
+    	ReportPanel allResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Number of Results Received", yearString, loc);
     	tabPanel.add(allResultPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -489,7 +497,7 @@ class ReportDialogBox extends WindowBox {
     	// Add All Cases Detected
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,3);
     	yLabel = "Cases Detected";
-    	ReportPanel positiveResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "All Cases Detected", yearString);  	
+    	ReportPanel positiveResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "All Cases Detected", yearString, loc);  	
     	tabPanel.add(positiveResultPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -497,7 +505,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Rif Resistant Result 
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
     	yLabel = "RIF Resistant Cases";
-    	ReportPanel rifResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "RIF Resistant Cases Detected", yearString);
+    	ReportPanel rifResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "RIF Resistant Cases Detected", yearString, loc);
     	tabPanel.add(rifResultPanel.getComposite(), yLabel);
     	
     	tabPanel.selectTab(0);
@@ -517,96 +525,98 @@ class ReportDialogBox extends WindowBox {
      */
    public void drawOtherResults(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     
+	    this.dataset = result;
+	   
 	   	chartPanel.add(tabPanel);
 	   	tabPanel.setSize("100%", "100%");
 	   	
-    	// Add Total Result Received
-    	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
-    	String yLabel = "All GeneXpert Results";
-    	ReportPanel allResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Number of Results Received", yearString);
-    	tabPanel.add(allResultPanel.getComposite(), yLabel);
-    	
-    	dataList.clear();
-    	
-    	// Add All Cases Detected
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,3);
-    	yLabel = "Cases Detected";
-    	ReportPanel positiveResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "All Cases Detected", yearString);
-    	tabPanel.add(positiveResultPanel.getComposite(), yLabel);
-    	
-    	dataList.clear();
-    	
-    	// Add MTB Negative
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
-    	yLabel = "MTB Negative";
-    	ReportPanel mtbNegativePanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "MTB Negative", yearString);
-    	tabPanel.add(mtbNegativePanel.getComposite(), yLabel);
-    	
-    	dataList.clear();
-    	
-    	// Add Unsuccessful Results
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,5);
-    	yLabel = "Unsuccessful";
-    	ReportPanel unsuccessfulPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Unsuccessful", yearString);
-    	tabPanel.add(unsuccessfulPanel.getComposite(), yLabel);
-    	
-    	dataList.clear();
-    	
-    	// Add Leaked Results
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,6);
-    	yLabel = "Leaked";
-    	ReportPanel LeakedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Leaked", yearString);
-    	tabPanel.add(LeakedPanel.getComposite(), yLabel);
-    	
-    	// Add Insufficient Quantity
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,7);
-    	yLabel = "Insufficient Quantity";
-    	ReportPanel insufficientQuantityPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Insufficient Quantity", yearString);
-    	tabPanel.add(insufficientQuantityPanel.getComposite(), yLabel);
-    	
-    	tabPanel.selectTab(0);
-    	
-    	TabPanel secondTabPanel = new TabPanel();
-    	chartPanel.add(secondTabPanel);
-    	secondTabPanel.setSize("100%", "100%");
-    	
-    	// Add Insufficient Quantity
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,8);
-    	yLabel = "Incorrect Paperwork";
-    	ReportPanel incorrectPaperworkPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Incorrect Paperwork", yearString);
-    	secondTabPanel.add(incorrectPaperworkPanel.getComposite(), yLabel);
-    	
-    	// Add Rejected Results
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,9);
-    	yLabel = "Rejected";
-    	ReportPanel rejectedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Rejected", yearString);
-    	secondTabPanel.add(rejectedPanel.getComposite(), yLabel);
-    	
-    	// Add Errored Results
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,10);
-    	yLabel = "Error";
-    	ReportPanel errorPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Error", yearString);
-    	secondTabPanel.add(errorPanel.getComposite(), yLabel);
-    	
-    	// Add Invalid Results
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,11);
-    	yLabel = "Invalid";
-    	ReportPanel invalidPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Invalid", yearString);
-    	secondTabPanel.add(invalidPanel.getComposite(), yLabel);
-    	
-    	// Add No Result
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,12);
-    	yLabel = "Invalid";
-    	ReportPanel noResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Invalid", yearString);
-    	secondTabPanel.add(noResultPanel.getComposite(), yLabel);
-    	
-    	// Add Other Result
-    	dataList = getColumnDataAsGraphData(result, locations, timeArray,13);
-    	yLabel = "Others";
-    	ReportPanel otherResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Others", yearString);
-    	secondTabPanel.add(otherResultPanel.getComposite(), yLabel);
-    	
-    	secondTabPanel.selectTab(0);
+		// Add Total Result Received
+		ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
+		String yLabel = "All GeneXpert Results";
+		ReportPanel allResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Number of Results Received", yearString, loc);
+		tabPanel.add(allResultPanel.getComposite(), yLabel);
+		
+		dataList.clear();
+		
+		// Add All Cases Detected
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,3);
+		yLabel = "Cases Detected";
+		ReportPanel positiveResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "All Cases Detected", yearString, loc);
+		tabPanel.add(positiveResultPanel.getComposite(), yLabel);
+		
+		dataList.clear();
+		
+		// Add MTB Negative
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
+		yLabel = "MTB Negative";
+		ReportPanel mtbNegativePanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "MTB Negative", yearString, loc);
+		tabPanel.add(mtbNegativePanel.getComposite(), yLabel);
+		
+		dataList.clear();
+		
+		// Add Unsuccessful Results
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,5);
+		yLabel = "Unsuccessful";
+		ReportPanel unsuccessfulPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Unsuccessful", yearString, loc);
+		tabPanel.add(unsuccessfulPanel.getComposite(), yLabel);
+		
+		dataList.clear();
+		
+		// Add Leaked Results
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,6);
+		yLabel = "Leaked";
+		ReportPanel LeakedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Leaked", yearString, loc);
+		tabPanel.add(LeakedPanel.getComposite(), yLabel);
+		
+		// Add Insufficient Quantity
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,7);
+		yLabel = "Insufficient Quantity";
+		ReportPanel insufficientQuantityPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Insufficient Quantity", yearString, loc);
+		tabPanel.add(insufficientQuantityPanel.getComposite(), yLabel);
+		
+		tabPanel.selectTab(0);
+		
+		TabPanel secondTabPanel = new TabPanel();
+		chartPanel.add(secondTabPanel);
+		secondTabPanel.setSize("100%", "100%");
+		
+		// Add Insufficient Quantity
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,8);
+		yLabel = "Incorrect Paperwork";
+		ReportPanel incorrectPaperworkPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Incorrect Paperwork", yearString, loc);
+		secondTabPanel.add(incorrectPaperworkPanel.getComposite(), yLabel);
+		
+		// Add Rejected Results
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,9);
+		yLabel = "Rejected";
+		ReportPanel rejectedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Rejected", yearString, loc);
+		secondTabPanel.add(rejectedPanel.getComposite(), yLabel);
+		
+		// Add Errored Results
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,10);
+		yLabel = "Error";
+		ReportPanel errorPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Error", yearString, loc);
+		secondTabPanel.add(errorPanel.getComposite(), yLabel);
+		
+		// Add Invalid Results
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,11);
+		yLabel = "Invalid";
+		ReportPanel invalidPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Invalid", yearString, loc);
+		secondTabPanel.add(invalidPanel.getComposite(), yLabel);
+		
+		// Add No Result
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,12);
+		yLabel = "Invalid";
+		ReportPanel noResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Invalid", yearString, loc);
+		secondTabPanel.add(noResultPanel.getComposite(), yLabel);
+		
+		// Add Other Result
+		dataList = getColumnDataAsGraphData(result, locations, timeArray,13);
+		yLabel = "Others";
+		ReportPanel otherResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "GeneXpert Results", "Others", yearString, loc);
+		secondTabPanel.add(otherResultPanel.getComposite(), yLabel);
+		
+		secondTabPanel.selectTab(0);
     }
     
    /**
@@ -622,13 +632,15 @@ class ReportDialogBox extends WindowBox {
     */
     public void drawTreatmentInitiation(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
+    	this.dataset = result;
+    	
     	chartPanel.add(tabPanel);
     	tabPanel.setSize("100%", "100%");
     	
     	// Add Total Treatment Initiated
     	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
     	String yLabel = "Treatments Initiated";
-    	ReportPanel treatmentInitiatedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Total Treatments Initiated", yearString);
+    	ReportPanel treatmentInitiatedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Total Treatments Initiated", yearString, loc);
     	tabPanel.add(treatmentInitiatedPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -636,7 +648,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Treatment Transferred Out
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
     	yLabel = "Transferred Out";
-    	ReportPanel transferredOutPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Transferred Out", yearString);
+    	ReportPanel transferredOutPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Transferred Out", yearString, loc);
     	tabPanel.add(transferredOutPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -644,7 +656,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Treatment Not Initiated
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,5);
     	yLabel = "Not Initiated";
-    	ReportPanel notInitiatedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Total Treatment Not Initiated", yearString);
+    	ReportPanel notInitiatedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Total Treatment Not Initiated", yearString, loc);
     	tabPanel.add(notInitiatedPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -652,7 +664,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Patient Refused Treatment
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,6);
     	yLabel = "Treatment Refused";
-    	ReportPanel rifResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Refused Treatment", yearString);
+    	ReportPanel rifResultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Refused Treatment", yearString, loc);
     	tabPanel.add(rifResultPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -660,25 +672,25 @@ class ReportDialogBox extends WindowBox {
     	// Add Couldn't Found Patient from Home Visit
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,7);
     	yLabel = "Patient Not Found";
-    	ReportPanel patientNotFoundPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Couldn't Found Patient from Home Visit", yearString);
+    	ReportPanel patientNotFoundPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Couldn't Found Patient from Home Visit", yearString, loc);
     	tabPanel.add(patientNotFoundPanel.getComposite(), yLabel);
     	
     	// Add Missing Contact Info
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,8);
     	yLabel = "Missing Information";
-    	ReportPanel missingContactInfoPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Clinic Didn't Have Address or Phone Number", yearString);
+    	ReportPanel missingContactInfoPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Clinic Didn't Have Address or Phone Number", yearString, loc);
     	tabPanel.add(missingContactInfoPanel.getComposite(), yLabel);
     	
     	// Add Died
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,9);
     	yLabel = "Patient Died";
-    	ReportPanel patientDiedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Died", yearString);
+    	ReportPanel patientDiedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Died", yearString, loc);
     	tabPanel.add(patientDiedPanel.getComposite(), yLabel);
     	
     	// Add Already on Treatment
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,10);
     	yLabel = "Already on Treatment";
-    	ReportPanel alreadyOnTreatmentPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Already on Treatment", yearString);
+    	ReportPanel alreadyOnTreatmentPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Already on Treatment", yearString, loc);
     	tabPanel.add(alreadyOnTreatmentPanel.getComposite(), yLabel);
     	
     	tabPanel.selectTab(0);
@@ -697,13 +709,15 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawTreatmentOutcome(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     	
+    	this.dataset = result;
+    	
     	chartPanel.add(tabPanel);
 		tabPanel.setSize("100%", "100%");
     	
     	// Add Cured
     	ArrayList<GraphData> dataList = getColumnDataAsGraphData(result, locations, timeArray,2);
     	String yLabel = "Cured";
-    	ReportPanel curedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Cured", yearString);
+    	ReportPanel curedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Cured", yearString, loc);
     	tabPanel.add(curedPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -711,7 +725,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Treatment Completed
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,3);
     	yLabel = "Treatment Completed";
-    	ReportPanel treatmentCompletedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Completed", yearString);
+    	ReportPanel treatmentCompletedPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Completed", yearString, loc);
     	tabPanel.add(treatmentCompletedPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -719,7 +733,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Default
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,4);
     	yLabel = "Default";
-    	ReportPanel defaultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Default", yearString);
+    	ReportPanel defaultPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Default", yearString, loc);
     	tabPanel.add(defaultPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -727,7 +741,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Treatment Failure
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,5);
     	yLabel = "Treatment Failure";
-    	ReportPanel treatmentFailurePanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Failure", yearString);
+    	ReportPanel treatmentFailurePanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Treatment Failure", yearString, loc);
     	tabPanel.add(treatmentFailurePanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -735,7 +749,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Patient Died
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,6);
     	yLabel = "Patient Death";
-    	ReportPanel patientDeathPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Death", yearString);
+    	ReportPanel patientDeathPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Patient Death", yearString, loc);
     	tabPanel.add(patientDeathPanel.getComposite(), yLabel);
     	
     	dataList.clear();
@@ -743,7 +757,7 @@ class ReportDialogBox extends WindowBox {
     	// Add Transferred Out
     	dataList = getColumnDataAsGraphData(result, locations, timeArray,7);
     	yLabel = "Transferred Out";
-    	ReportPanel transferredOutPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Transferred Out", yearString);
+    	ReportPanel transferredOutPanel = new ReportPanel(reportType, dataList, arrayT, xLabel, "Number of Patients", "Transferred Out", yearString, loc);
     	tabPanel.add(transferredOutPanel.getComposite(), yLabel);
     	
     	tabPanel.selectTab(0);
@@ -761,6 +775,8 @@ class ReportDialogBox extends WindowBox {
      * @param yearString
      */
     public void drawScreeningSummary(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
+    	
+    	this.dataset = result;
     	
     	for (int i = 0; i < locations.length; i++) {
     
@@ -786,7 +802,7 @@ class ReportDialogBox extends WindowBox {
 					
 					String title = "Screening Summary";
 					
-			    	ReportPanel screeningSummaryPanel = new ReportPanel(report, dataList, arrayT, time, "Number Screened", title + " " +yearString, loc);
+			    	ReportPanel screeningSummaryPanel = new ReportPanel(report, dataList, arrayT, time, "Number Screened", title + " " +yearString, loc, "");
 					
 					tabPanel.add(screeningSummaryPanel.getComposite(), loc);
 					
@@ -810,6 +826,8 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawSputumSubmissionRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
         
+    	this.dataset = result;
+    	
     	for (int i = 0; i < locations.length; i++) {
     	    
     		TabPanel tabPanel = new TabPanel();
@@ -833,7 +851,7 @@ class ReportDialogBox extends WindowBox {
 					
 					String title = "Sputum Submission Rate";
 					
-			    	ReportPanel sputumSubmissionRatePanel = new ReportPanel(report, dataList, arrayT, time, "Sputum Submission Rate", title + " " +yearString, loc);
+			    	ReportPanel sputumSubmissionRatePanel = new ReportPanel(report, dataList, arrayT, time, "Sputum Submission Rate", title + " " +yearString, loc, "");
 					
 					tabPanel.add(sputumSubmissionRatePanel.getComposite(), loc);
 					
@@ -857,6 +875,8 @@ class ReportDialogBox extends WindowBox {
      */
     public void drawTreatmentInitiationRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString){
     
+    	this.dataset = result;
+    	
     	for (int i = 0; i < locations.length; i++) {
     	    
     		TabPanel tabPanel = new TabPanel();
@@ -880,7 +900,7 @@ class ReportDialogBox extends WindowBox {
 					
 					String title = "Treatment Initiation Rate";
 					
-			    	ReportPanel treatmentInitiationRatePanel = new ReportPanel(report, dataList, arrayT, time, "Treatment Initiation Rate", title + " " +yearString, loc);
+			    	ReportPanel treatmentInitiationRatePanel = new ReportPanel(report, dataList, arrayT, time, "Treatment Initiation Rate", title + " " +yearString, loc, "");
 					
 					tabPanel.add(treatmentInitiationRatePanel.getComposite(), loc);
 					
@@ -903,6 +923,8 @@ class ReportDialogBox extends WindowBox {
      * @param yearString
      */
     private void drawSputumSubmissionAndErrorRate(String[][] result, String[] locations, String[] timeArray, final String[] arrayT, final String xLabel, final String yearString) {
+    	
+    	this.dataset = result;
     	
     	for (int i = 0; i < locations.length; i++) {
     	    
@@ -936,7 +958,7 @@ class ReportDialogBox extends WindowBox {
 					String title = "Sputum Submission and Error Rate";
 					String yLabel = "Percentage of Result";
 					
-			    	ReportPanel sputumSubmissionAndErrorRatePanel = new ReportPanel(report, dataList, arrayT, time, yLabel, title + " " +yearString, loc);
+			    	ReportPanel sputumSubmissionAndErrorRatePanel = new ReportPanel(report, dataList, arrayT, time, yLabel, title + " " +yearString, loc, "");
 					
 					tabPanel.add(sputumSubmissionAndErrorRatePanel.getComposite(), loc);
 					
@@ -1168,5 +1190,6 @@ class ReportDialogBox extends WindowBox {
 		doubleArr = doubleArray.toArray(doubleArr);
 		return doubleArr;
 	}
+
     
  }

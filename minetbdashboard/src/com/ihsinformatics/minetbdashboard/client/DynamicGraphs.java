@@ -30,8 +30,8 @@ public class DynamicGraphs implements ChangeHandler{
 	
 	private VerticalPanel mainVerticalPanel = new VerticalPanel();
 	
-	private HTML dynamicGraphLabel = new HTML("<font size=\"6\"> Built Graphs </font>");
-	private HTML dynamicGraphSubheading = new HTML("Select your options to build Graph Report <br> <br>");
+	private HTML dynamicGraphLabel = new HTML("<font size=\"6\"> Custom Charts </font>");
+	private HTML dynamicGraphSubheading = new HTML("Select your options to build Chart Report <br> <br>");
 	
 	private VerticalPanel bodyVerticalPanel = new VerticalPanel();
 	private ListBox chartType = new ListBox();

@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 
+import org.moxieapps.gwt.highcharts.client.Chart;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -64,9 +66,11 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	
 	// Chart Options Widgets...
 	private VerticalPanel chartOptionPanel = new VerticalPanel();
-	
-	// For Line Chart
 	private Grid bodyGrid = new Grid(1,3);
+	
+	/**
+	 *  For Line/Column/Pie Chart  (2D)
+	 */
 	
 	// x-Axis Widgets
 	private VerticalPanel xAxisPanel = new VerticalPanel();
@@ -98,10 +102,10 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	private RadioButton yAxisOnDataRadioButton = new RadioButton("stack button", "on Data");
 	private RadioButton yAxisOnTimeRadioButton = new RadioButton("stack button", "on Time");
 	
-	// Group By Widgets
-	private VerticalPanel groupByPanel = new VerticalPanel();
-	private HTML groupByLabel = new HTML("<font size=\"3\"> <b> Reporting Level </b> </font>");
-	private VerticalPanel groupByOptionPanel  = new VerticalPanel();
+	// Report Level Widgets
+	private VerticalPanel reportingLevelPanel = new VerticalPanel();
+	private HTML reportingLevelLabel = new HTML("<font size=\"3\"> <b> Reporting Level </b> </font>");
+	private VerticalPanel reportingLevelOptionPanel  = new VerticalPanel();
 	private Label selectLevelLabel = new Label("Select Level:");
 	private ListBox reportingLevelListBox = new ListBox();
 	private Label levelOptionsLabel = new Label();
@@ -112,6 +116,43 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	private Button drawChart = new Button("Draw Chart");
 	private HTML statement1 = new HTML("<b><font color=\"red\">* </font>Use Control Key(Ctrl) for multiple value selection.</b>");
 	private HTML statement2 = new HTML("<b><font color=\"red\">* </font>You can only select multiple values (or All), either for y-Axis or Reporting Level.</b>");
+	private HTML statement3 = new HTML("<b><font color=\"red\">* </font>Same Dimensions can't be selected for Group By and Report Level.</b>");
+	
+	/**
+	 * For Pie Chart 1D 
+	 */
+	
+	// Group By Widgets
+	private VerticalPanel groupByPanel = new VerticalPanel();
+	private HTML groupByLabel = new HTML("<font size=\"3\"> <b> Group by </b> </font>");
+	private VerticalPanel groupByOptionPanel  = new VerticalPanel();
+	private RadioButton timeGroupByRadioButton = new RadioButton("group-by","Time");
+	private RadioButton locationGroupByRadioButton = new RadioButton("group-by","Location");
+	private VerticalPanel groupByOptionDetailPanel = new VerticalPanel();
+	
+	// Data Widgets
+	private VerticalPanel dataPanel = new VerticalPanel();
+	private HTML dataLabel = new HTML("<font size=\"3\"> <b> Data </b> </font>");
+	private VerticalPanel dataOptionPanel  = new VerticalPanel();
+	
+	// Reporting Level Widgets
+	private VerticalPanel reportingLevelIDPanel = new VerticalPanel();
+	private HTML reportingLevelIDLabel = new HTML("<font size=\"3\"> <b> Reporting Level </b> </font>");
+	private VerticalPanel reportingLevelIDOptionPanel  = new VerticalPanel();
+	private RadioButton timeReportingLevelRadioButton = new RadioButton("report-level","Time");
+	private RadioButton locationReportingLevelRadioButton = new RadioButton("report-level","Location");
+	private VerticalPanel reportingLevelIDOptionDetailPanel  = new VerticalPanel();
+	private Label selectReportingLevelLabel = new Label("Select Level:");
+	private ListBox reportingLevel1DListBox = new ListBox();
+	private Label levelOptions1DLabel = new Label();
+	private ListBox levelOption1DListBox = new ListBox();
+	private Label reportingLevelTimeDimensionLabel = new Label("Select Time Dimension:");
+	private ListBox reportingLevelTimeListBox = new ListBox();
+	private Label reportingLevelTimeRangeLabel = new Label("Select Time Range:");
+	private Label reportingLevelYearLabel = new Label("Year: ");
+	private ListBox reportingLevelYearListBox = new ListBox();
+	private Label reportingLevelRangeLabel = new Label();
+	private ListBox reportingLevelRangeListBox = new ListBox();
 	
 	private String chartType = "";
 	
@@ -135,6 +176,8 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		// Adding Option Panels a/c to Chart Type
 		if(chartType.equalsIgnoreCase("Line") || chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar"))
 			fill2DChartOptions(chartType);
+		else if(chartType.equalsIgnoreCase("Pie"))
+			fill1DChartOptions(chartType);
 		
 		// Add Footer...
 		Grid  grid = new Grid(1,2);
@@ -142,7 +185,11 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		VerticalPanel panel = new VerticalPanel();
 		
 		panel.add(statement1);
-		panel.add(statement2);
+		
+		if(chartType.equalsIgnoreCase("Pie"))
+			panel.add(statement3);
+		else if(chartType.equalsIgnoreCase("Line") || chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar"))
+			panel.add(statement2);
 		
 		grid.setWidget(0, 0, panel);
 		grid.setWidget(0, 1, drawChart);
@@ -154,11 +201,18 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		xAxisTimeListBox.addChangeHandler(this);
 		yAxisDataListBox.addChangeHandler(this);
 		reportingLevelListBox.addChangeHandler(this);
+		reportingLevel1DListBox.addChangeHandler(this);
+		reportingLevelTimeListBox.addChangeHandler(this);
 		
 		yAxisSelectAllDataTables.addClickHandler(this);
 		selectAllLocationCheckBox.addClickHandler(this);
 		yAxisStackedCheckBox.addClickHandler(this);
 		drawChart.addClickHandler(this);
+		timeGroupByRadioButton.addClickHandler(this);
+		locationGroupByRadioButton.addClickHandler(this);
+		timeReportingLevelRadioButton.addClickHandler(this);
+		locationReportingLevelRadioButton.addClickHandler(this);
+		
 	}
 	
 	/**
@@ -171,7 +225,180 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	
 	/**
 	 * 
-	 * Options For Line Chart...
+	 * Options for Pie Chart...
+	 */
+	public void fill1DChartOptions(String chartType){
+		
+		chartOptionPanel.clear();
+		chartOptionPanel.add(bodyGrid);
+		bodyGrid.setCellSpacing(20);
+		
+		// Add Data Widgets
+		bodyGrid.getCellFormatter().setVerticalAlignment(0, 0, HasVerticalAlignment.ALIGN_TOP);
+		bodyGrid.setWidget(0, 0, dataPanel);
+		dataPanel.add(dataLabel);
+		dataOptionPanel.setStyleName("Option-Panel");
+		dataPanel.add(dataOptionPanel);
+		dataOptionPanel.add(yAxisDataDimensionLabel);
+		dataOptionPanel.add(yAxisDataListBox);
+		dataOptionPanel.add(yAxisDataTableLabel);
+		dataOptionPanel.add(yAxisDataTableListBox);
+        yAxisSelectAllDataTables.setValue(false);
+		yAxisDataListBox.clear();
+		String query = "select * from data_forms;";
+		try {
+			service.getTableData(query.toString(),new AsyncCallback<String[][]>() {
+
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage
+							.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+					
+				}
+
+				@Override
+				public void onSuccess(String[][] result) {
+					
+					for (int i = 0; i < result.length; i++) {
+						yAxisDataListBox.addItem(result[i][1], result[i][2]);
+					}
+					fillYAxisDataTables();
+				}
+				
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		yAxisDataListBox.setWidth("250px");
+		yAxisDataTableListBox.setWidth("250px");
+		
+		// Add GroupBy Widgets
+		bodyGrid.getCellFormatter().setVerticalAlignment(0, 1, HasVerticalAlignment.ALIGN_TOP);
+		bodyGrid.setWidget(0, 1, groupByPanel);
+		groupByPanel.add(groupByLabel);
+		groupByOptionPanel.setStyleName("Option-Panel");
+		groupByPanel.add(groupByOptionPanel);
+		HorizontalPanel hp = new HorizontalPanel();
+		hp.add(timeGroupByRadioButton);
+		hp.add(locationGroupByRadioButton);
+		groupByOptionPanel.add(hp);
+		timeGroupByRadioButton.setValue(true);
+		fillGroupByPanel();
+		groupByOptionPanel.add(groupByOptionDetailPanel);
+		
+		// Reporting Level
+		bodyGrid.getCellFormatter().setVerticalAlignment(0, 2, HasVerticalAlignment.ALIGN_TOP);
+		bodyGrid.setWidget(0, 2, reportingLevelIDPanel);
+		reportingLevelIDPanel.add(reportingLevelIDLabel);
+		reportingLevelIDOptionPanel.setStyleName("Option-Panel");
+		reportingLevelIDPanel.add(reportingLevelIDOptionPanel);
+		HorizontalPanel hp1 = new HorizontalPanel();
+		hp1.add(timeReportingLevelRadioButton);
+		hp1.add(locationReportingLevelRadioButton);
+		reportingLevelIDOptionPanel.add(hp1);
+		locationReportingLevelRadioButton.setValue(true);
+		fillReportingLevel();
+		reportingLevelIDOptionPanel.add(reportingLevelIDOptionDetailPanel);
+	}
+	
+	public void fillGroupByPanel(){
+		groupByOptionDetailPanel.clear();
+		
+		if(timeGroupByRadioButton.getValue()){
+			groupByOptionDetailPanel.add(xAxisTimeDimensionLabel);
+			groupByOptionDetailPanel.add(xAxisTimeListBox);
+			xAxisTimeListBox.clear();
+			for (TimeDimenstion dim : TimeDimenstion.values()) {
+				xAxisTimeListBox.addItem(dim.toString());
+			}
+			groupByOptionDetailPanel.add(xAxisTimeRangeLabel);
+			FlexTable dateRangeXAxisFlexTable = new FlexTable();
+			dateRangeXAxisFlexTable.setWidget(0, 0, xAxisYearFromListBox);
+			dateRangeXAxisFlexTable.setWidget(0, 1, xAxisYearToListBox);
+			dateRangeXAxisFlexTable.setWidget(1, 0, xAxisFromRange);
+			dateRangeXAxisFlexTable.setWidget(1, 1, xAxisToRange);
+			groupByOptionDetailPanel.add(dateRangeXAxisFlexTable);
+			xAxisYearFromListBox.clear();
+			xAxisYearToListBox.clear();
+			for (int year = 2014; year <= new Date().getYear() + 1900; year++) {
+				xAxisYearFromListBox.addItem(String.valueOf(year));
+				xAxisYearToListBox.addItem(String.valueOf(year));
+			}
+			fillXAxisTimeRange();
+		}
+		else{
+			groupByOptionDetailPanel.add(selectLevelLabel);
+			reportingLevelListBox.clear();
+			for (LocationDimension dim : LocationDimension.values()) {
+				reportingLevelListBox.addItem(dim.toString());
+			}
+			groupByOptionDetailPanel.add(reportingLevelListBox);
+			
+			String HeadingLabel = "Select " + MineTBClient.get(reportingLevelListBox) + "(s).";
+			
+			levelOptionsLabel.setText(HeadingLabel);
+			groupByOptionDetailPanel.add(levelOptionsLabel);
+			groupByOptionDetailPanel.add(selectAllLocationCheckBox);
+			selectAllLocationCheckBox.setValue(true);
+			levelOptionListBox.setEnabled(false);
+			groupByOptionDetailPanel.add(levelOptionListBox);
+			fillLocationOptions();
+			levelOptionListBox.setHeight("100px");
+			levelOptionListBox.setWidth("250px");
+			levelOptionListBox.setMultipleSelect(true);
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * Reporting Level Option for Pie (1D) chart
+	 */
+	public void fillReportingLevel(){
+		reportingLevelIDOptionDetailPanel.clear();
+		
+		if(locationReportingLevelRadioButton.getValue()){
+			
+			reportingLevelIDOptionDetailPanel.add(selectReportingLevelLabel);
+			reportingLevel1DListBox.clear();
+			for (LocationDimension dim : LocationDimension.values()) {
+				reportingLevel1DListBox.addItem(dim.toString());
+			}
+			reportingLevelIDOptionDetailPanel.add(reportingLevel1DListBox);
+			String HeadingLabel = "Select " + MineTBClient.get(reportingLevel1DListBox);
+			levelOptions1DLabel.setText(HeadingLabel);
+			reportingLevelIDOptionDetailPanel.add(levelOptions1DLabel);
+			reportingLevelIDOptionDetailPanel.add(levelOption1DListBox);
+			fillLocation1DOptions();
+			levelOption1DListBox.setWidth("250px");
+			
+		}
+		else{
+			reportingLevelIDOptionDetailPanel.add(reportingLevelTimeDimensionLabel);
+			reportingLevelTimeListBox.clear();
+			for (TimeDimenstion dim : TimeDimenstion.values()) {
+				reportingLevelTimeListBox.addItem(dim.toString());
+			}
+			reportingLevelIDOptionDetailPanel.add(reportingLevelTimeListBox);
+			reportingLevelIDOptionDetailPanel.add(reportingLevelTimeRangeLabel);
+			FlexTable flexTable = new FlexTable();
+			flexTable.setWidget(0,0,reportingLevelYearLabel);
+			flexTable.setWidget(0,1,reportingLevelYearListBox);
+			flexTable.setWidget(1,0,reportingLevelRangeLabel);
+			flexTable.setWidget(1,1,reportingLevelRangeListBox);
+			reportingLevelIDOptionDetailPanel.add(flexTable);
+			reportingLevelYearListBox.clear();
+			for (int year = 2014; year <= new Date().getYear() + 1900; year++) {
+				reportingLevelYearListBox.addItem(String.valueOf(year));
+			}
+			fill1DTimeWidgets();
+		}
+		
+	}
+	
+	/**
+	 * 
+	 * Options For Line/Column/Bar Chart...
 	 */
 	public void fill2DChartOptions(String chartType){
 		
@@ -223,7 +450,7 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
         yAxisOptionPanel.add(yAxisSelectAllDataTables);
         yAxisOptionPanel.add(yAxisDataTableListBox);
         yAxisSelectAllDataTables.setValue(true);
-		yAxisDataTableListBox.setEnabled(false);
+        yAxisDataTableListBox.setEnabled(false);
 		yAxisDataListBox.clear();
 		String query = "select * from data_forms;";
 		try {
@@ -263,11 +490,12 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 			
 			yAxisOnDataRadioButton.setVisible(false);
 			yAxisOnTimeRadioButton.setVisible(false);			
-		}	
-		yAxisDataListBox.setWidth("250px");
+		}
+		
 		yAxisDataTableListBox.setHeight("100px");
-		yAxisDataTableListBox.setWidth("250px");
 		yAxisDataTableListBox.setMultipleSelect(true);
+		yAxisDataListBox.setWidth("250px");
+		yAxisDataTableListBox.setWidth("250px");
 		HorizontalPanel hp1 = new HorizontalPanel();
 		hp1.add(yAxisYLabel);
 		hp1.add(yAxisYlabelTextBox);
@@ -275,25 +503,25 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		
 		// Add Report Level Widgets
 		bodyGrid.getCellFormatter().setVerticalAlignment(0, 2, HasVerticalAlignment.ALIGN_TOP);
-		bodyGrid.setWidget(0, 2, groupByPanel);
-		groupByPanel.add(groupByLabel);
-		groupByOptionPanel.setStyleName("Option-Panel");
-		groupByPanel.add(groupByOptionPanel);
-		groupByOptionPanel.add(selectLevelLabel);
+		bodyGrid.setWidget(0, 2, reportingLevelPanel);
+		reportingLevelPanel.add(reportingLevelLabel);
+		reportingLevelOptionPanel.setStyleName("Option-Panel");
+		reportingLevelPanel.add(reportingLevelOptionPanel);
+		reportingLevelOptionPanel.add(selectLevelLabel);
 		reportingLevelListBox.clear();
 		for (LocationDimension dim : LocationDimension.values()) {
 			reportingLevelListBox.addItem(dim.toString());
 		}
-		groupByOptionPanel.add(reportingLevelListBox);
+		reportingLevelOptionPanel.add(reportingLevelListBox);
 		
 		String HeadingLabel = "Select " + MineTBClient.get(reportingLevelListBox) + "(s).";
 		
 		levelOptionsLabel.setText(HeadingLabel);
-		groupByOptionPanel.add(levelOptionsLabel);
-		groupByOptionPanel.add(selectAllLocationCheckBox);
+		reportingLevelOptionPanel.add(levelOptionsLabel);
+		reportingLevelOptionPanel.add(selectAllLocationCheckBox);
 		selectAllLocationCheckBox.setValue(true);
 		levelOptionListBox.setEnabled(false);
-		groupByOptionPanel.add(levelOptionListBox);
+		reportingLevelOptionPanel.add(levelOptionListBox);
 		fillLocationOptions();
 		levelOptionListBox.setHeight("100px");
 		levelOptionListBox.setWidth("250px");
@@ -394,6 +622,112 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	}
 	
 	/**
+	 * Reporting Level Time Dimension for Pie (1D) charts
+	 * 
+	 */
+	public void fill1DTimeWidgets(){
+		
+		String time = MineTBClient.get(reportingLevelTimeListBox).toLowerCase();
+		if(time.equalsIgnoreCase("Year")){
+			reportingLevelRangeLabel.setVisible(false);
+			reportingLevelRangeListBox.setVisible(false);
+			reportingLevelYearLabel.setVisible(true);
+			reportingLevelYearListBox.setVisible(true);
+		}
+		else{
+			reportingLevelRangeLabel.setVisible(true);
+			reportingLevelRangeListBox.setVisible(true);
+			reportingLevelYearLabel.setVisible(true);
+			reportingLevelYearListBox.setVisible(true);
+			
+			reportingLevelRangeListBox.clear();
+			
+			if(time.equalsIgnoreCase("Quarter")){
+				
+				for (int quarter = 1; quarter <= 4; quarter++) {
+					reportingLevelRangeListBox.addItem(String.valueOf(quarter));
+				}
+			}
+			else if(time.equalsIgnoreCase("Month")){
+				
+				for (int month = 1; month <= 12; month++) {
+					reportingLevelRangeListBox.addItem(String.valueOf(month));
+				}
+			}
+			else if(time.equalsIgnoreCase("Week")){
+				
+				for (int week = 1; week <= 52; week++) {
+					reportingLevelRangeListBox.addItem(String.valueOf(week));
+				}
+			}
+			
+			reportingLevelRangeLabel.setText(Character.toUpperCase(time.charAt(0)) + time.substring(1) + ": ");
+			
+		}
+		
+	}
+	
+	
+	/**
+	 * Fills Location Options for Pie Reporting Level
+	 * 
+	 */
+	public void fillLocation1DOptions(){
+		
+		String HeadingLabel = "Select " + MineTBClient.get(reportingLevel1DListBox) + "(s).";
+		levelOptions1DLabel.setText(HeadingLabel);
+		
+		String query = "select state_province, city_village, location_name from dim_location";
+		
+		levelOption1DListBox.clear();
+		
+		try {
+			service.getTableData(query.toString(),new AsyncCallback<String[][]>() {
+
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage
+							.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+					
+				}
+
+				@Override
+				public void onSuccess(String[][] result) {
+					
+					String[] locationsProvince = getUniqueValues(result, 0);
+					String[] locationsDistict = getUniqueValues(result, 1);
+					String[] locationsFacility = getUniqueValues(result, 2);
+					
+					
+					if(MineTBClient.get(reportingLevel1DListBox).equalsIgnoreCase("Province")){
+						for(int i = 0; i < locationsProvince.length; i++){
+							if(!(locationsProvince[i] == null || locationsProvince[i].equals("")))
+								levelOption1DListBox.addItem(locationsProvince[i]);
+						}
+					}
+					else if(MineTBClient.get(reportingLevel1DListBox).equalsIgnoreCase("District")){
+						for(int i = 0; i < locationsDistict.length; i++){
+							if(!(locationsDistict[i] == null || locationsDistict[i].equals("")))
+								levelOption1DListBox.addItem(locationsDistict[i]);
+						}
+					}
+					else if(MineTBClient.get(reportingLevel1DListBox).equalsIgnoreCase("Facility")){
+						for(int i = 0; i < locationsFacility.length; i++){
+							if(!(locationsFacility[i] == null || locationsFacility[i].equals("")))
+								levelOption1DListBox.addItem(locationsFacility[i]);
+						}
+					}
+				}
+				
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	
+	/**
 	 * Fills Location Options for Reporting Level
 	 * 
 	 */
@@ -478,6 +812,12 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		 else if (source == reportingLevelListBox){
 				fillLocationOptions();
 		 }
+		 else if (source == reportingLevel1DListBox){
+			 fillLocation1DOptions();
+		 }
+		 else if(source == reportingLevelTimeListBox){
+			 fill1DTimeWidgets();
+		 }
 	}
 
 	@Override
@@ -506,17 +846,135 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 				
 		}
 		else if(sender == drawChart){
-			if(validate())
-				drawChart();	
+			if(validate()){
+				if(chartType.equals("Pie"))
+					drawPieChart();
+				else if(chartType.equalsIgnoreCase("Line") || chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar"))
+					draw2DChart();	
+			}
+		}
+		else if(sender == timeGroupByRadioButton || sender == locationGroupByRadioButton){
+			fillGroupByPanel();
+		}
+		else if(sender == timeReportingLevelRadioButton || sender == locationReportingLevelRadioButton){
+			fillReportingLevel();
 		}
 	}
 	
+	
+	public void drawPieChart(){
+		
+		StringBuilder query = new StringBuilder();
+		
+		String time = "";
+		if(timeGroupByRadioButton.getValue())
+			time = MineTBClient.get(xAxisTimeListBox).toLowerCase();
+		else
+			time = MineTBClient.get(reportingLevelTimeListBox).toLowerCase();
+		String loc = "";
+		if(locationGroupByRadioButton.getValue())
+			loc = MineTBClient.get(reportingLevelListBox).toLowerCase();
+		else
+			loc = MineTBClient.get(reportingLevel1DListBox).toLowerCase();
+		
+		query.append(getSelectString(time, loc));
+		query.append(getFromString());
+		query.append(getWhereString());
+    	query.append(" group by " + time + ", " + loc);
+    	query.append(" order by " + time + ", " + loc);
+    	
+    	try {
+			service.getTableData(query.toString(),new AsyncCallback<String[][]>() {
+
+				@Override
+				public void onFailure(Throwable caught) {
+					Window.alert(CustomMessage
+							.getErrorMessage(ErrorType.DATA_ACCESS_ERROR));
+				}
+
+				@Override
+				public void onSuccess(String[][] result) {
+					String[] timeArray = getTimeArray();    // Get all time values
+					String[] locations = getUniqueValues(result, 1);    // Get all unique locations involved
+					
+					if(timeGroupByRadioButton.getValue()){
+						
+						Number[]  numberArray = new Number[timeArray.length]; 
+						
+						for(int i = 0; i < timeArray.length; i++){
+							
+							numberArray[i] = findValueInData(result, locations[0], timeArray[i], 2);
+							
+						}
+						
+						ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+						GraphData gd = new GraphData(locations[0],numberArray);
+						dataList.add(gd);
+						
+						String xLabel = MineTBClient.get(xAxisTimeListBox);
+						
+						if(!xLabel.equalsIgnoreCase("YEAR"))
+							xLabel = xLabel + " (" + MineTBClient.get(xAxisYearFromListBox) + ")";
+						
+						String yLabel = locations[0];
+						
+						ReportPanel screenedPanel = new ReportPanel(chartType, dataList, timeArray, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox),"");
+						DynamicReportDialogBox dialogBox = new DynamicReportDialogBox("", "", screenedPanel.getComposite());
+						dialogBox.show();
+						
+					}
+					else{
+						
+						Number[]  numberArray = new Number[locations.length];
+						
+						String time = "";
+						String label = "";
+						if(MineTBClient.get(reportingLevelTimeListBox).equalsIgnoreCase("YEAR")){
+							time = MineTBClient.get(reportingLevelYearListBox);
+							label = MineTBClient.get(reportingLevelYearListBox);
+						}	
+						else{ 
+							time = MineTBClient.get(reportingLevelRangeListBox);
+							label = MineTBClient.get(reportingLevelYearListBox) +" ("+ MineTBClient.get(reportingLevelTimeListBox).substring(0,1) + " - " + MineTBClient.get(reportingLevelRangeListBox) + ")";
+						}	
+						
+						for(int i = 0; i < locations.length; i++){
+							
+							numberArray[i] = findValueInData(result, locations[i], time, 2);
+							
+						}
+						
+						ArrayList<GraphData> dataList = new ArrayList<GraphData>();
+						GraphData gd = new GraphData(label, numberArray);
+						dataList.add(gd);
+						
+						String xLabel = MineTBClient.get(reportingLevelListBox);
+						String yLabel = "";
+						if(MineTBClient.get(reportingLevelTimeListBox).equalsIgnoreCase("YEAR"))
+							yLabel = MineTBClient.get(reportingLevelYearListBox);
+						else 
+							yLabel = MineTBClient.get(reportingLevelYearListBox) + "("  + MineTBClient.get(reportingLevelTimeListBox).toLowerCase() + " - "  + MineTBClient.get(reportingLevelRangeListBox) + ")";
+						
+						ReportPanel screenedPanel = new ReportPanel(chartType, dataList, locations, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox),"");
+						DynamicReportDialogBox dialogBox = new DynamicReportDialogBox("", "", screenedPanel.getComposite());
+						dialogBox.show();
+						
+					}
+					
+				}
+    	
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    			
+	}
 	
 	/**
 	 * Draw Charts a/c to selection
 	 * 
 	 */
-	public void drawChart(){
+	public void draw2DChart(){
 		
 		StringBuilder query = new StringBuilder();
 		String loc = MineTBClient.get(reportingLevelListBox).toLowerCase();
@@ -616,10 +1074,10 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 					String yLabel = MineTBClient.get(yAxisYlabelTextBox);
 					xLabel = MineTBClient.get(xAxisXlabelTextBox);
 								
-					if(yAxisSelectAllDataTables.getValue()){   // id All is selected for data...
+					if(yAxisSelectAllDataTables.getValue()){   // if All is selected for data...
 						String select = "";
 						for (int i = 0; i < yAxisDataTableListBox.getItemCount(); i++) {
-				            select = select + yAxisDataTableListBox.getValue(i) + " , ";   
+				            select = select + yAxisDataTableListBox.getItemText(i) + " , ";   
 						}
 						String splitSelect[] = select.split(" , ");
 						dataList = getColumnDataAsGraphDataBySelection(result,splitSelect,timeArray);
@@ -629,8 +1087,12 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 						dataList = getColumnDataAsGraphDataByLoc(result, locations, timeArray,2);
 						
 					}
-					else{ // if more than one selexted
-						String select = MineTBClient.get(yAxisDataTableListBox);
+					else{ // if more than one selected
+						String select = "";
+						for (int i = 0; i < yAxisDataTableListBox.getItemCount(); i++) {
+							if(yAxisDataTableListBox.isItemSelected(i))
+								select = select + yAxisDataTableListBox.getItemText(i) + " , ";   
+						}
 						String splitSelect[] = select.split(" , ");
 						dataList = getColumnDataAsGraphDataBySelection(result,splitSelect,timeArray);
 						
@@ -638,21 +1100,27 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 					
 					String title = MineTBClient.get(titleTextBox) + " - " + MineTBClient.get(subtitleTextBox);
 					
-					// Stacked Bar pr Column Chart selected
+					String legendType = "";
+					if(selectAllLocationCheckBox.getValue() || MineTBClient.get(levelOptionListBox).split(" , ").length > 1){
+						legendType = MineTBClient.get(reportingLevelListBox).toLowerCase();
+						legendType = Character.toUpperCase(legendType.charAt(0)) + legendType.substring(1);
+					}
+					
+					// Stacked Bar or Column Chart selected
 					if((chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar")) && yAxisStackedCheckBox.getValue()){  
 						if(yAxisOnDataRadioButton.getValue()){
-							ReportPanel screenedPanel = new ReportPanel("Stacked " + chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox));
+							ReportPanel screenedPanel = new ReportPanel("Stacked " + chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox),legendType);
 							DynamicReportDialogBox dialogBox = new DynamicReportDialogBox(title, timeline, screenedPanel.getComposite());
 							dialogBox.show();
 						}
 						else{
-							ReportPanel screenedPanel = new ReportPanel("Stacked on Time " + chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox));
+							ReportPanel screenedPanel = new ReportPanel("Stacked on Time " + chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox),legendType);
 							DynamicReportDialogBox dialogBox = new DynamicReportDialogBox(title, timeline, screenedPanel.getComposite());
 							dialogBox.show();
 						}
 					}
 					else{  // else
-						ReportPanel screenedPanel = new ReportPanel(chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox));
+						ReportPanel screenedPanel = new ReportPanel(chartType, dataList, arrayT, xLabel, yLabel, MineTBClient.get(titleTextBox), MineTBClient.get(subtitleTextBox),legendType);
 						DynamicReportDialogBox dialogBox = new DynamicReportDialogBox(title, timeline, screenedPanel.getComposite());
 						dialogBox.show();
 					}
@@ -716,46 +1184,135 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	public String getWhereString(){
 		
 		String where = "";
-		if(!selectAllLocationCheckBox.getValue()){
-			String selected = MineTBClient.get(levelOptionListBox);
-			String stringArray[] = selected.split(" , ");
-			if(stringArray.length > 0){
-				for(int i = 0; i < stringArray.length; i++){
-					
-					if(!stringArray[i].equals("")){
-						
-						if(where.equals(""))
-							where = " where ( " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
-						else
-							where =  where + " or " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
+		if(chartType.equalsIgnoreCase("Pie")){   // For Pie Chart Options
+			
+			// Time is Grouped By
+			if(timeGroupByRadioButton.getValue()){
+				// Grouped By...
+				String t = MineTBClient.get(xAxisTimeListBox).toLowerCase();
+				TimeDimenstion time = TimeDimenstion.valueOf(t.toUpperCase());
+				
+				if(where.equals(""))
+					where = " where 1=1";
+				
+				switch (time) {
+				case YEAR:
+					where = where + " and year between " + MineTBClient.get(xAxisYearFromListBox).toLowerCase() + " and " + MineTBClient.get(xAxisYearToListBox).toLowerCase();
+					break;
+				case QUARTER:
+				case MONTH:
+				case WEEK:
+					where = where + " and year = " + MineTBClient.get(xAxisYearFromListBox).toLowerCase();
+					where = where + " and " + t + " between " + MineTBClient.get(xAxisFromRange).toLowerCase() + " and " + MineTBClient.get(xAxisToRange).toLowerCase();
+					break;
+				default:
+					break;
+				}
+				// Reporting Level..
+				where = where + " and " + MineTBClient.get(reportingLevel1DListBox).toLowerCase() + " = '" + MineTBClient.get(levelOption1DListBox) +"'";
+			}
+			else{  //Location is Grouped By
+				// some value selected
+				if(!selectAllLocationCheckBox.getValue()){
+					String selected = MineTBClient.get(levelOptionListBox);
+					String stringArray[] = selected.split(" , ");
+					if(stringArray.length > 0){
+						for(int i = 0; i < stringArray.length; i++){
 							
+							if(!stringArray[i].equals("")){
+								
+								if(where.equals(""))
+									where = " where ( " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
+								else
+									where =  where + " or " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
+									
+							}
+						}
+					}		
+					where = where + " )";
+				}
+				else{  // all value selected
+					for (int i = 0; i < levelOptionListBox.getItemCount(); i++) {
+							if(where.equals(""))
+								where = " where ( " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + levelOptionListBox.getValue(i) + "'";
+							else
+								where =  where + " or " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + levelOptionListBox.getValue(i) + "'";							
 					}
+					where = where + " )";
 				}
 				
-				where = where + " )";
+				// Reporting Level
+				String t = MineTBClient.get(reportingLevelTimeListBox).toLowerCase();
+				TimeDimenstion time = TimeDimenstion.valueOf(t.toUpperCase());
+				
+				switch (time) {
+				case YEAR:
+					where = where + " and year = " + MineTBClient.get(reportingLevelYearListBox);
+					break;
+				case QUARTER:
+				case MONTH:
+				case WEEK:
+					where = where + " and year = " + MineTBClient.get(reportingLevelYearListBox);
+					where = where + " and " + t + " = " + MineTBClient.get(reportingLevelRangeListBox);
+					break;
+				default:
+					break;
+				}
+				
 			}
 		}
-		
-		String t = MineTBClient.get(xAxisTimeListBox);
-		TimeDimenstion time = TimeDimenstion.valueOf(t.toUpperCase());
-		
-		if(where.equals(""))
-			where = " where 1=1";
-		
-		switch (time) {
-		case YEAR:
-			where = where + " and year between " + MineTBClient.get(xAxisYearFromListBox).toLowerCase() + " and " + MineTBClient.get(xAxisYearToListBox).toLowerCase();
-			break;
-		case QUARTER:
-		case MONTH:
-		case WEEK:
-			where = where + " and year = " + MineTBClient.get(xAxisYearFromListBox).toLowerCase();
-			where = where + " and quarter between " + MineTBClient.get(xAxisFromRange).toLowerCase() + " and " + MineTBClient.get(xAxisToRange).toLowerCase();
-			break;
-		default:
-			break;
+		else if(chartType.equalsIgnoreCase("Line") || chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar")){  // For Column, Bar, Line Chart Options
+			// Reporting Level ...
+			if(!selectAllLocationCheckBox.getValue()){   // if some value selected
+				String selected = MineTBClient.get(levelOptionListBox);
+				String stringArray[] = selected.split(" , ");
+				if(stringArray.length > 0){
+					for(int i = 0; i < stringArray.length; i++){
+						
+						if(!stringArray[i].equals("")){
+							
+							if(where.equals(""))
+								where = " where ( " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
+							else
+								where =  where + " or " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + stringArray[i] + "'";
+								
+						}
+					}
+					
+					where = where + " )";
+				}
+			}
+			else{   // if all selected
+				for (int i = 0; i < levelOptionListBox.getItemCount(); i++) {
+						if(where.equals(""))
+							where = " where ( " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + levelOptionListBox.getValue(i) + "'";
+						else
+							where =  where + " or " + MineTBClient.get(reportingLevelListBox).toLowerCase() + " = '" + levelOptionListBox.getValue(i) + "'";		
+				}
+				where = where + " )";
+			}
+			
+			// Time ...
+			String t = MineTBClient.get(xAxisTimeListBox).toLowerCase();
+			TimeDimenstion time = TimeDimenstion.valueOf(t.toUpperCase());
+			
+			if(where.equals(""))
+				where = " where 1=1";
+			
+			switch (time) {
+			case YEAR:
+				where = where + " and year between " + MineTBClient.get(xAxisYearFromListBox).toLowerCase() + " and " + MineTBClient.get(xAxisYearToListBox).toLowerCase();
+				break;
+			case QUARTER:
+			case MONTH:
+			case WEEK:
+				where = where + " and year = " + MineTBClient.get(xAxisYearFromListBox).toLowerCase();
+				where = where + " and "+ t +" between " + MineTBClient.get(xAxisFromRange).toLowerCase() + " and " + MineTBClient.get(xAxisToRange).toLowerCase();
+				break;
+			default:
+				break;
+			}
 		}
-		
 		return where;
 	}
 	
@@ -769,25 +1326,41 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 		boolean flag = true;
 		String alertMessage = "";
 		
-		if(!selectAllLocationCheckBox.getValue() && MineTBClient.get(levelOptionListBox).equals("")){
-			flag = false;
-			alertMessage = alertMessage + "Select atleast one group by item. \n";
-		}
-		
-		if(!yAxisSelectAllDataTables.getValue() && MineTBClient.get(yAxisDataTableListBox).equals("")){
-			flag = false;
-			alertMessage = alertMessage + "Select atleast one data item for y-Axis. \n";
-		}
-		else{
-			boolean f = false;
-			if(yAxisSelectAllDataTables.getValue() || MineTBClient.get(yAxisDataTableListBox).split(" , ").length != 1)
-				f = true;
+		if(chartType.equals("Pie")){
 			
-			if(f){
-				
-				if(selectAllLocationCheckBox.getValue() || MineTBClient.get(levelOptionListBox).split(" , ").length != 1){
+			if(timeGroupByRadioButton.getValue() == timeReportingLevelRadioButton.getValue()){
+				flag = false;
+				alertMessage = alertMessage + "Select different dimension for Group by and Reporting Level.\n";
+			}
+			else{
+				if(locationGroupByRadioButton.getValue() && !selectAllLocationCheckBox.getValue() && MineTBClient.get(levelOptionListBox).equals("")){
 					flag = false;
-					alertMessage = alertMessage + "You can only select multiple values (or All), either for data or group by. \n";
+					alertMessage = alertMessage + "Select atleast one data item for Group by location. \n";
+				}
+			}
+			
+		}
+		else if(chartType.equalsIgnoreCase("Line") || chartType.equalsIgnoreCase("Column") || chartType.equalsIgnoreCase("Bar")){
+			if(!selectAllLocationCheckBox.getValue() && MineTBClient.get(levelOptionListBox).equals("")){
+				flag = false;
+				alertMessage = alertMessage + "Select atleast one group by item. \n";
+			}
+			
+			if(!yAxisSelectAllDataTables.getValue() && MineTBClient.get(yAxisDataTableListBox).equals("")){
+				flag = false;
+				alertMessage = alertMessage + "Select atleast one data item for y-Axis. \n";
+			}
+			else{
+				boolean f = false;
+				if(yAxisSelectAllDataTables.getValue() || MineTBClient.get(yAxisDataTableListBox).split(" , ").length != 1)
+					f = true;
+				
+				if(f){
+					
+					if(selectAllLocationCheckBox.getValue() || MineTBClient.get(levelOptionListBox).split(" , ").length != 1){
+						flag = false;
+						alertMessage = alertMessage + "You can only select multiple values (or All), either for data or group by. \n";
+					}
 				}
 			}
 		}
@@ -871,12 +1444,17 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
     	    String selectArray[] = null;
     	    
     	    if(!yAxisSelectAllDataTables.getValue()){
-    	    	selectArray = MineTBClient.get(yAxisDataTableListBox).split(" , ");
+    	    	String s = "";
+    	    	for (int i = 0; i < yAxisDataTableListBox.getItemCount(); i++) {
+    	    		if(yAxisDataTableListBox.isItemSelected(i))
+    	    			s = s + yAxisDataTableListBox.getItemText(i) + " , ";   
+    	    	}
+    	    	selectArray = s.split(" , ");
     	    }
     	    else{
     	    	String s = "";
     	    	for (int i = 0; i < yAxisDataTableListBox.getItemCount(); i++) {
-		            s = s + yAxisDataTableListBox.getValue(i) + " , ";   
+		            s = s + yAxisDataTableListBox.getItemText(i) + " , ";   
     	    	}
     	    	selectArray = s.split(" , ");
     	    }
@@ -937,8 +1515,7 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
      * @param index
      * @return
      */
-    public Double[] getColumnData(String[][] data, String[] timeArray,
-			String loc, int index) {
+    public Double[] getColumnData(String[][] data, String[] timeArray, String loc, int index) {
 		ArrayList<Double> doubleArray = new ArrayList<Double>();
 		for (int i = 0; i < timeArray.length; i++) {
 			double value = findValueInData(data, loc, timeArray[i], index);
@@ -957,7 +1534,7 @@ public class DynamicGraphsComposite implements ChangeHandler, ClickHandler  {
 	 * @param valueIndex
 	 * @return
 	 */
-	private double findValueInData(String[][] data, String columnValue, String rowValue, int valueIndex) {
+    private double findValueInData(String[][] data, String columnValue, String rowValue, int valueIndex) {
 		double value = 0;
 		for (int i = 0; i < data.length; i++) {
 			if (data[i][1].equals(columnValue) && data[i][0].equals(rowValue)) {
