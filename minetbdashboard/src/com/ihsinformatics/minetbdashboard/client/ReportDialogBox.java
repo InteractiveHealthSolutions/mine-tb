@@ -155,16 +155,16 @@ class ReportDialogBox extends WindowBox {
        headerPanel.add(buttonPanel);
        headerPanel.setSize("100%", "100%");
        
-       mainPanel.add(headerPanel);
+       VerticalPanel vp = new VerticalPanel();
+       vp.setSize("100%", "100%");
+       
+       vp.add(headerPanel);
        
        fillChartPanel();
        
-       ScrollPanel scrollPanel = new ScrollPanel();
-       scrollPanel.setSize("100", "100");
-       scrollPanel.add(chartPanel);
+       vp.add(chartPanel);
        
-       mainPanel.add(scrollPanel);
-       
+       mainPanel.add(vp);
        setWidget(mainPanel);
        
     }

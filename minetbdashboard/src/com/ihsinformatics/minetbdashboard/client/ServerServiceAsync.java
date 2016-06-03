@@ -11,6 +11,8 @@
  */
 package com.ihsinformatics.minetbdashboard.client;
 
+import java.util.ArrayList;
+
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.ihsinformatics.minetbdashboard.shared.Parameter;
 import com.ihsinformatics.minetbdashboard.shared.Report;
@@ -35,4 +37,6 @@ public interface ServerServiceAsync {
 	void getReportsList(AsyncCallback<Report[]> callback) throws Exception;
 
 	void getTableData(String sqlQuery, AsyncCallback<String[][]> callback) throws Exception;
+	
+	void executeQueries(ArrayList<String> queryArray, AsyncCallback<ArrayList<String[][]>> callback) throws Exception;
 }

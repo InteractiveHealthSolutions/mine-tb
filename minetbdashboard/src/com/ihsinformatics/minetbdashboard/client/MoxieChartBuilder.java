@@ -19,10 +19,9 @@ import org.moxieapps.gwt.highcharts.client.labels.*;
 import org.moxieapps.gwt.highcharts.client.plotOptions.*;
 
 import com.google.gwt.user.client.Window;
-import com.googlecode.gwt.charts.client.ChartLoader;
-import com.googlecode.gwt.charts.client.ChartPackage;
 import com.googlecode.gwt.charts.client.ColumnType;
 import com.googlecode.gwt.charts.client.DataTable;
+import com.googlecode.gwt.charts.client.options.SeriesType;
 import com.googlecode.gwt.charts.client.table.Table;
 import com.googlecode.gwt.charts.client.table.TableOptions;
 import com.ihsinformatics.minetbdashboard.shared.GraphData;
@@ -80,8 +79,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
-                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    	 return "<i>" + toolTipData.getXAsString() + " ("+xLabel+")" + "<i><br/><b>" +
+                       		  toolTipData.getSeriesName() + " : </b>" + toolTipData.getYAsDouble(); 
                     }  
                 })  
             );
@@ -296,8 +295,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
-                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    	 return "<i>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</i><br/><b>" +
+                       		  toolTipData.getSeriesName() + " :</b> " + toolTipData.getYAsDouble(); 
                     }  
                 })  
             );
@@ -399,8 +398,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
-                    	 return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                       		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble(); 
+                    	 return "<i>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</i><br/><b>" +
+                       		  toolTipData.getSeriesName() + " :</b> " + toolTipData.getYAsDouble(); 
                     }  
                 })  
             );
@@ -492,8 +491,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
             .setFormatter(new ToolTipFormatter() {  
                 public String format(ToolTipData toolTipData) {  
-                	 return "<b>" + toolTipData.getXAsString() + "</b><br/>" +
-                   		  toolTipData.getSeriesName() +  " ("+xLabel+") : " + toolTipData.getYAsDouble(); 
+                	 return "<i>" + toolTipData.getXAsString() + "</i><br/><b>" +
+                   		  toolTipData.getSeriesName() +  " ("+xLabel+") :</b> " + toolTipData.getYAsDouble(); 
                 }  
             })  
         );  
@@ -607,8 +606,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
             .setFormatter(new ToolTipFormatter() {  
                 public String format(ToolTipData toolTipData) {  
-                	 return "<b>" + toolTipData.getXAsString() + "</b><br/>" +
-                   		  toolTipData.getSeriesName() +  " ("+xLabel+") : " + toolTipData.getYAsDouble(); 
+                	 return "<i>" + toolTipData.getXAsString() + "</i><br/><b>" +
+                   		  toolTipData.getSeriesName() +  " ("+xLabel+") :</b> " + toolTipData.getYAsDouble(); 
                 }  
             })  
         );  
@@ -721,8 +720,8 @@ public class MoxieChartBuilder {
          chart.setToolTip(new ToolTip()  
                 .setFormatter(new ToolTipFormatter() {  
                     public String format(ToolTipData toolTipData) {  
-                        return "<b>" + toolTipData.getXAsString() + " ("+time+")" + "</b><br/>" +  
-                            toolTipData.getSeriesName() + " : " + toolTipData.getYAsLong() + "<br/>" +
+                        return "<i>" + toolTipData.getXAsString() + " ("+time+")" + "</i><br/><b>" +  
+                            toolTipData.getSeriesName() + " :</b> " + toolTipData.getYAsLong() + "<br/>" +
                             (lineLabel.equals(toolTipData.getSeriesName()) ? "" : "Total: " + toolTipData.getTotal());  
                     }  
                 })  
@@ -834,8 +833,8 @@ public class MoxieChartBuilder {
         chart.setToolTip(new ToolTip()  
             .setFormatter(new ToolTipFormatter() {  
                 public String format(ToolTipData toolTipData) {  
-                    return "<b>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</b><br/>" +
-                    		  toolTipData.getSeriesName() + " : " + toolTipData.getYAsDouble() +  
+                    return "<i>" + toolTipData.getXAsString() + " ("+xLabel+")" + "</i><br/><b>" +
+                    		  toolTipData.getSeriesName() + " : </b>" + toolTipData.getYAsDouble() +  
                               (primaryTitle.equals(toolTipData.getSeriesName()) ? "" : " %");  
                 }  
             })  
@@ -929,6 +928,96 @@ public class MoxieChartBuilder {
         return chart;  
     } 
 	
+	/**
+	 * 
+	 * Returns Combination Chart (line charts + column chart)
+	 * 
+	 * @param xAxisData
+	 * @param xLabel
+	 * @param yLabel
+	 * @param dataList
+	 * @param title
+	 * @param loc
+	 * 
+	 * @return chart
+	 */
+	public static Chart createCombinationChart(String[] timeArray, final String xLabel,final String yLabel, ArrayList<GraphData> dataList, String title, String subTitle) {
+		
+		// Define LINE Chart
+		final Chart chart = new Chart();  
+        chart.setMarginBottom(60);
+        chart.setMarginRight(80);
+        
+        // Chart Headings
+        chart.setChartTitle(new ChartTitle()  
+            						.setText(title)  
+            						.setX(-20)  // center 
+        					)
+        	 .setChartSubtitle(new ChartSubtitle()  
+            						.setText(subTitle)  
+            						.setX(-20)  // center
+        			 		   );
+        
+        // Set Legends position and style 
+        chart.setLegend(new Legend()    
+                				.setAlign(Legend.Align.RIGHT)  
+                				.setVerticalAlign(Legend.VerticalAlign.MIDDLE)     
+                				.setFloating(true) 
+                				.setShadow(false) 
+                				.setLayout(Layout.VERTICAL)
+        				); 
+        
+        // Set Tool Tip
+        chart.setToolTip(new ToolTip()  
+                .setFormatter(new ToolTipFormatter() {  
+                    public String format(ToolTipData toolTipData) {  
+                    	 return "<i>" + toolTipData.getXAsString() + " ("+xLabel+")" + "<i><br/><b>" +
+                       		  toolTipData.getSeriesName() + " : </b>" + toolTipData.getYAsDouble(); 
+                    }  
+                })  
+            );
+		
+        // Allow Whole Number only
+		chart.getXAxis().setAllowDecimals(false);
+		chart.getYAxis().setAllowDecimals(false);
+		
+		// Define X-Axis
+	    chart.getXAxis()  
+	    	.setCategories(timeArray)    // set x-Axis Data - Number[]
+	    	.setAxisTitle(new AxisTitle()     // x-Axis Title & Value
+	    					.setText(xLabel)
+	    					.setStyle(new Style().setFontSize("16px"))  
+	    				 );  
+	
+	    // Define Y-Axis
+		chart.getYAxis()
+			 .setMin(0)  
+		     .setAxisTitle(new AxisTitle()    // y-Axis Title & Value
+		        			.setText(yLabel)
+		        			.setStyle(new Style().setFontSize("16px"))  
+		    		 	);
+		
+		// Set Y-Values
+	    for (int i=0; i<dataList.size(); i++) {
+	    	
+	    	chart.addSeries(chart.createSeries()  
+	    	        				.setName(dataList.get(i).getTitle())    //  Series Title
+	    	        				.setPoints(dataList.get(i).getData())   //  Series Data in Number Array
+	    	        				.setOption("type", dataList.get(i).getSeriesType().toLowerCase())
+	    	        				.setPlotOptions(new ColumnPlotOptions()  
+										.setStacking(PlotOptions.Stacking.NORMAL))
+	    					);
+	    }
+		
+	    // move exporting button & move to top button
+	    chart.setExporting(new Exporting()
+	       .setSourceWidth(1500)
+	       .setSourceHeight(1500)
+	    		);
+	    
+	    return chart;  
+	} 
+	
 	
 	public static void createTable(String reportType, Table table, ArrayList<GraphData> dataList, String[] timeArray, String xLabel, String yLabel, String title, String subtitle, String legendType) {
 		
@@ -957,7 +1046,8 @@ public class MoxieChartBuilder {
 		}
 		
 		else if(reportType.equalsIgnoreCase("Screening Summary") || reportType.equalsIgnoreCase("Sputum Submission Rates") || reportType.equalsIgnoreCase("Treatment Initiation Rates") || reportType.equalsIgnoreCase("Sputum Submission & Error Rates") 
-				|| reportType.equalsIgnoreCase("Line") || reportType.equalsIgnoreCase("Column") || reportType.equalsIgnoreCase("Bar") || reportType.equalsIgnoreCase("Pie")){
+				|| reportType.equalsIgnoreCase("Line") || reportType.equalsIgnoreCase("Column") || reportType.equalsIgnoreCase("Bar") || reportType.equalsIgnoreCase("Pie") 
+				|| reportType.equalsIgnoreCase("Stacked on Time Bar") || reportType.equalsIgnoreCase("Stacked on Time Column") || reportType.equalsIgnoreCase("Stacked Bar") || reportType.equalsIgnoreCase("Stacked Column")){
 			
 			dataTable.addColumn(ColumnType.STRING, xLabel);
 			for(int i=0; i<dataList.size(); i++)

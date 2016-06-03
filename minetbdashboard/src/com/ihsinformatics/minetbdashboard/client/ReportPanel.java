@@ -197,6 +197,8 @@ public class ReportPanel implements ClickHandler {
 				chart = MoxieChartBuilder.createStackBarOnTimeChart(arrayT, xLabel, yLabel, dataList, title, subTitle, legendType);
 			else if(reportType.equalsIgnoreCase("Pie"))
 				chart = MoxieChartBuilder.createPieChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
+			else if(reportType.equalsIgnoreCase("Combination"))
+				chart = MoxieChartBuilder.createCombinationChart(arrayT, xLabel, yLabel, dataList, title, subTitle);
 			
 			graphRadioButton.setValue(true);
 			
@@ -332,11 +334,15 @@ public class ReportPanel implements ClickHandler {
 
 					@Override
 					public void run() {
+						VerticalPanel vp = new VerticalPanel();
+						vp.setSize("100%", "100%");
+						panel.add(vp);
 						// Create and attach the chart
 						Table table = new Table();
 						Label label = new Label(title + " - " + subTitle);
-						panel.add(label);
-						panel.add(table);
+						vp.add(label);
+						vp.add(table);
+						table.setSize("100%", "100%");
 						label.setStyleName("ChartHeader");
 						table.getElement().setAttribute("align", "center");
 						MoxieChartBuilder.createTable(reportType,table,list,arrayT, xLabel, yLabel, title, subTitle,legendType);

@@ -58,6 +58,7 @@ public class DynamicGraphs implements ChangeHandler{
 		chartType.addItem("Bar Chart", "Bar");
 		chartType.addItem("Pie Chart", "Pie");
 		chartType.addItem("Line Chart", "Line");
+		chartType.addItem("Combination Chart", "Combination");
 		
 		bodyVerticalPanel.add(optionVerticalPanel);
 		bodyVerticalPanel.setCellVerticalAlignment(optionVerticalPanel, HasVerticalAlignment.ALIGN_TOP);

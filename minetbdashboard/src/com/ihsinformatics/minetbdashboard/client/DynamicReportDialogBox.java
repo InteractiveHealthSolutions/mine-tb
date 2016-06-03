@@ -103,16 +103,19 @@ class DynamicReportDialogBox extends WindowBox {
        headerPanel.add(subheadingLabel);
        headerPanel.add(buttonPanel);
        headerPanel.setSize("100%", "100%");
+      
+       VerticalPanel vp = new VerticalPanel();
+       vp.setSize("100%", "100%");
+       vp.add(headerPanel);
        
-       mainPanel.add(headerPanel);
+       vp.add(chartPanel);
        
-       ScrollPanel scrollPanel = new ScrollPanel();
-       scrollPanel.setSize("100", "100");
-       scrollPanel.add(chartPanel);
+       tabPanel.setSize("100%", "100%");
+       chartPanel.add(tabPanel);
+       tabPanel.add(composite, "");
+       tabPanel.selectTab(0);
        
-       chartPanel.add(composite);
-       
-       mainPanel.add(scrollPanel);
+       mainPanel.add(vp);
        
        setWidget(mainPanel);
        

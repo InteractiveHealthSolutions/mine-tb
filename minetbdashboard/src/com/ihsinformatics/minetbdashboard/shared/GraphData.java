@@ -20,6 +20,21 @@ public class GraphData {
 	private String title;
 	private int size;
 	private Number[] data;
+	private String seriesType;
+	private int id;
+	
+	public String getSeriesType() {
+		return seriesType;
+	}
+	public void setSeriesType(String seriesType) {
+		this.seriesType = seriesType;
+	}
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
 	
 	public String getTitle() {
 		return title;
@@ -52,5 +67,13 @@ public class GraphData {
 		this.size = data.length;
 	}
 	
+	public GraphData(String title, Number[] data, String seriesType, int id) {
+		super();
+		this.title = title;
+		this.data = data;
+		this.size = data.length;
+		this.seriesType = seriesType;
+		this.id = id;
+	}
 
 }

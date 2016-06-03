@@ -271,4 +271,16 @@ public class ServerServiceImpl extends RemoteServiceServlet implements
 	public void setCurrentUser(String userName) {
 		MineTB.setCurrentUser(userName);
 	}
+	
+	
+	public ArrayList<String[][]> executeQueries(ArrayList<String> queryArray){
+		ArrayList<String[][]> resultArray = new ArrayList<String[][]>();
+		
+		for(String query : queryArray){
+			resultArray.add(getTableData(query));
+		}
+		
+		return resultArray;
+	}
+	
 }

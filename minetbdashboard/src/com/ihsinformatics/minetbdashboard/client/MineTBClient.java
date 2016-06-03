@@ -14,6 +14,7 @@ package com.ihsinformatics.minetbdashboard.client;
 import java.util.Date;
 
 import com.google.gwt.user.client.Cookies;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextBoxBase;
 import com.google.gwt.user.client.ui.ValueBoxBase;

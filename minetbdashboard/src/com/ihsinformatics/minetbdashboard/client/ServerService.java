@@ -11,6 +11,8 @@
  */
 package com.ihsinformatics.minetbdashboard.client;
 
+import java.util.ArrayList;
+
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import com.ihsinformatics.minetbdashboard.shared.Parameter;
@@ -34,4 +36,6 @@ public interface ServerService extends RemoteService {
 	Report[] getReportsList() throws Exception;
 	
 	String[][] getTableData(String sqlQuery) throws Exception;
+	
+	ArrayList<String[][]> executeQueries (ArrayList<String> queryArray) throws Exception;
 }
